@@ -21,6 +21,10 @@ module.exports = {
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true
+      },
+      '/resources': {
+        target: 'http://localhost:8000',
+        changeOrigin: true
       }
     }
   },

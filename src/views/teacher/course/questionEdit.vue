@@ -5,19 +5,11 @@
 </template>
 
 <script>
-import SingleChoice from '@/views/exam/question/edit/single-choice'
-import MultipleChoice from '@/views/exam/question/edit/multiple-choice'
-import TrueFalse from '@/views/exam/question/edit/true-false'
-import GapFilling from '@/views/exam/question/edit/gap-filling'
-import ShortAnswer from '@/views/exam/question/edit/short-answer'
+import SingleChoice from './components/SingleChoiceEdit'
 
 export default {
     components: {
-        SingleChoice,
-        MultipleChoice,
-        TrueFalse,
-        GapFilling,
-        ShortAnswer
+        SingleChoice
     },
     props: {
         type: {
@@ -33,14 +25,9 @@ export default {
             return this.$route.query.id
         },
         currentEditor() {
-            const typeMap = {
-                'singleChoice': SingleChoice,
-                'multipleChoice': MultipleChoice,
-                'trueFalse': TrueFalse,
-                'gapFilling': GapFilling,
-                'shortAnswer': ShortAnswer
-            }
-            return typeMap[this.type] || SingleChoice
+            // 所有题型都使用统一的SingleChoiceEdit组件
+            // 这个组件内部会根据questionType自动适配不同的题型
+            return SingleChoice
         }
     }
 }

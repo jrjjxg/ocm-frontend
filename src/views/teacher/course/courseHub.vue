@@ -17,13 +17,25 @@
                         <i class="el-icon-s-home"></i>
                         <span>课程概览</span>
                     </el-menu-item>
-                    <el-menu-item index="assignments">
-                        <i class="el-icon-s-order"></i>
+                    <el-menu-item index="homework">
+                        <i class="el-icon-edit-outline"></i>
                         <span>作业管理</span>
                     </el-menu-item>
                     <el-menu-item index="exams">
                         <i class="el-icon-s-claim"></i>
                         <span>测验管理</span>
+                    </el-menu-item>
+                    <el-menu-item index="questionBank">
+                        <i class="el-icon-s-order"></i>
+                        <span>题库管理</span>
+                    </el-menu-item>
+                    <el-menu-item index="papers">
+                        <i class="el-icon-tickets"></i>
+                        <span>试卷管理</span>
+                    </el-menu-item>
+                    <el-menu-item index="discussion">
+                        <i class="el-icon-chat-line-round"></i>
+                        <span>课程讨论</span>
                     </el-menu-item>
                     <el-menu-item index="resources">
                         <i class="el-icon-document"></i>
@@ -32,6 +44,10 @@
                     <el-menu-item index="students">
                         <i class="el-icon-user"></i>
                         <span>学生管理</span>
+                    </el-menu-item>
+                    <el-menu-item index="grades">
+                        <i class="el-icon-s-data"></i>
+                        <span>成绩统计</span>
                     </el-menu-item>
                 </el-menu>
             </div>

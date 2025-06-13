@@ -50,10 +50,6 @@
                         <i class="el-icon-s-home"></i>
                         <span>课程概览</span>
                     </el-menu-item>
-                    <el-menu-item index="assignments">
-                        <i class="el-icon-s-order"></i>
-                        <span>作业管理</span>
-                    </el-menu-item>
                     <el-menu-item index="exams">
                         <i class="el-icon-s-claim"></i>
                         <span>测验管理</span>
@@ -80,11 +76,6 @@
                     <course-overview :course-id="course.id" />
                 </div>
 
-                <!-- 作业管理 -->
-                <div v-else-if="activeMenu === 'assignments'">
-                    <course-assignments :course-id="course.id" />
-                </div>
-
                 <!-- 测验管理 -->
                 <div v-else-if="activeMenu === 'exams'">
                     <course-exams :course-id="course.id" />
@@ -107,7 +98,6 @@
 <script>
 import teacherCourseApi from '@/api/teacherCourse'
 import CourseOverview from './overview'
-import CourseAssignments from './assignments'
 import CourseExams from './exams'
 import CourseResources from './resources'
 import CourseStudents from './students'
@@ -115,7 +105,6 @@ import CourseStudents from './students'
 export default {
     components: {
         CourseOverview,
-        CourseAssignments,
         CourseExams,
         CourseResources,
         CourseStudents
@@ -140,14 +129,12 @@ export default {
             showMobileMenu: false,
             menuLabels: {
                 'overview': '课程概览',
-                'assignments': '作业管理',
                 'exams': '测验管理',
                 'resources': '课程资料',
                 'students': '学生管理'
             },
             menuIcons: {
                 'overview': 'el-icon-s-home',
-                'assignments': 'el-icon-s-order',
                 'exams': 'el-icon-s-claim',
                 'resources': 'el-icon-document',
                 'students': 'el-icon-user'
@@ -202,7 +189,7 @@ export default {
             }
         },
         goBack() {
-            this.$router.push('/teacher/course/list')
+            this.$router.push('/teacher')
         },
 
         // 新增的响应式和滑动方法

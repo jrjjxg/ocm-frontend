@@ -1,37 +1,27 @@
-import subjectApi from '@/api/subject'
+// 由于课程管理系统不需要学科概念，这个模块可以简化或移除
+// 暂时保留空的实现以避免破坏现有代码
 
 const state = {
-  subjects: []
+  // 课程管理系统不需要学科概念，保留空状态
 }
 
 const getters = {
-  subjectEnumFormat: (state) => (key) => {
-    for (let item of state.subjects) {
-      if (item.id === key) {
-        return item.name + ' ( ' + item.levelName + ' )'
-      }
-    }
-    return null
-  }
+  // 保留空的getters以避免破坏现有代码
 }
 
 // actions
 const actions = {
   initSubject ({ commit }, action) {
-    subjectApi.list().then(re => {
-      commit('setSubjects', re.response)
-      if (action !== undefined) {
-        action()
-      }
-    })
+    // 课程管理系统不需要学科概念，直接执行回调
+    if (action !== undefined) {
+      action()
+    }
   }
 }
 
 // mutations
 const mutations = {
-  setSubjects: (state, subjects) => {
-    state.subjects = subjects
-  }
+  // 保留空的mutations
 }
 
 export default {

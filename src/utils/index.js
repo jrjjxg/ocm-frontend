@@ -351,3 +351,56 @@ export function removeClass (ele, cls) {
     ele.className = ele.className.replace(reg, ' ')
   }
 }
+
+/**
+ * 格式化秒数为时分秒格式
+ * @param {number} seconds 秒数
+ * @returns {string} 格式化后的时间字符串
+ */
+export function formatSeconds(seconds) {
+  if (!seconds || seconds < 0) return '00:00:00'
+
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = seconds % 60
+
+  const formatNumber = (num) => num.toString().padStart(2, '0')
+
+  return `${formatNumber(hours)}:${formatNumber(minutes)}:${formatNumber(secs)}`
+}
+
+/**
+ * 格式化日期
+ * @param {Date|string|number} date 日期对象或日期字符串或时间戳
+ * @param {string} format 格式化模式，默认 yyyy-MM-dd
+ * @returns {string} 格式化后的日期字符串
+ */
+export function formatDate(date, format = 'yyyy-MM-dd') {
+  if (!date) return '';
+  
+  let dateObj;
+  if (typeof date === 'object') {
+    dateObj = date;
+  } else {
+    // 尝试转换为日期对象
+    dateObj = new Date(date);
+  }
+  
+  const year = dateObj.getFullYear();
+  const month = dateObj.getMonth() + 1;
+  const day = dateObj.getDate();
+  const hours = dateObj.getHours();
+  const minutes = dateObj.getMinutes();
+  const seconds = dateObj.getSeconds();
+  
+  // 补零函数
+  const pad = (num) => (num < 10 ? '0' + num : num);
+  
+  return format
+    .replace('yyyy', year)
+    .replace('MM', pad(month))
+    .replace('dd', pad(day))
+    .replace('HH', pad(hours))
+    .replace('mm', pad(minutes))
+    .replace('ss', pad(seconds));
+}

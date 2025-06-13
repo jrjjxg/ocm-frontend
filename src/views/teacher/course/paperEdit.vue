@@ -1,15 +1,15 @@
 <template>
     <div class="paper-edit-wrapper">
-        <paper-editor :course-id="courseId" :paper-id="paperId" :return-path="returnPath"></paper-editor>
+        <paper-edit-form :course-id="courseId" :paper-id="paperId" :return-path="returnPath"></paper-edit-form>
     </div>
 </template>
 
 <script>
-import PaperEditor from '@/views/exam/paper/edit'
+import PaperEditForm from './paperEditForm'
 
 export default {
     components: {
-        PaperEditor
+        PaperEditForm
     },
     computed: {
         courseId() {

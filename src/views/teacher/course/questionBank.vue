@@ -62,7 +62,7 @@
                     <div class="question-content" v-html="previewDialog.question.title"></div>
 
                     <!-- 选择题选项 -->
-                    <div v-if="[1, 3].includes(previewDialog.question.questionType)" class="question-options">
+                    <div v-if="[1, 2, 3].includes(previewDialog.question.questionType)" class="question-options">
                         <div v-for="(item, index) in previewDialog.question.items" :key="index" class="option-item">
                             <span>{{ String.fromCharCode(65 + index) }}. </span>
                             <span v-html="item.content"></span>
@@ -116,10 +116,10 @@ export default {
             },
             editTypeMap: {
                 1: 'singleChoice',  // 单选题
-                3: 'multipleChoice', // 多选题
-                2: 'trueFalse',     // 判断题
-                5: 'shortAnswer',   // 简答题
-                4: 'gapFilling'     // 填空题
+                2: 'multipleChoice', // 多选题
+                3: 'trueFalse',     // 判断题
+                4: 'gapFilling',    // 填空题
+                5: 'shortAnswer'    // 简答题
             }
         }
     },

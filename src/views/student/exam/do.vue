@@ -56,10 +56,11 @@
 <script>
 import { mapState, mapGetters } from 'vuex'
 import { formatSeconds } from '@/utils'
-import QuestionEdit from '../components/QuestionEdit'
+import QuestionEdit from './components/QuestionEdit'
 import studentExamApi from '@/api/studentExam'
 import examPaperApi from '@/api/examPaper'
 import examPaperAnswerApi from '@/api/examPaperAnswer'
+import { getExamDetail, submitExamAnswer } from '@/api/student/exam'
 
 export default {
     components: { QuestionEdit },
@@ -79,27 +80,19 @@ export default {
         }
     },
     created() {
-        let paperId = this.$route.query.id
-        let examId = this.$route.query.examId
+        let paperId = this.$route.params.id || this.$route.query.id
+        let examId = this.$route.query.examId || paperId
         let courseId = this.$route.query.courseId
+
         if (paperId && parseInt(paperId) !== 0) {
             this.formLoading = true
-            examPaperApi.select(paperId).then(re => {
-                this.form = re.response
-                // 如果有考试时长设置，则优先使用考试设置的时长
-                if (this.$route.query.duration) {
-                    this.remainTime = parseInt(this.$route.query.duration) * 60
-                } else {
-                    this.remainTime = re.response.suggestTime * 60
-                }
-                this.initAnswer(paperId, examId, courseId)
-                this.timeReduce()
-                this.formLoading = false
-            }).catch(error => {
-                console.error(error)
-                this.$message.error('获取试卷信息失败')
-                this.formLoading = false
-            })
+
+            // 优先使用课程考试API，如果有courseId的话
+            if (courseId) {
+                this.loadCourseExam(courseId, examId, paperId)
+            } else {
+                this.loadExamPaper(paperId, examId, courseId)
+            }
         }
     },
     beforeDestroy() {
@@ -150,27 +143,114 @@ export default {
             window.clearInterval(_this.timer)
             _this.formLoading = true
 
-            examPaperAnswerApi.answerSubmit(this.answer).then(re => {
-                if (re.code === 1) {
-                    _this.$alert('试卷得分：' + re.response + '分', '考试结果', {
+            // 如果是课程考试，使用课程考试API提交
+            if (this.answer.courseId && this.answer.examId) {
+                this.submitCourseExam()
+            } else {
+                this.submitExamPaper()
+            }
+        },
+
+        // 提交课程考试答案
+        async submitCourseExam() {
+            try {
+                const response = await submitExamAnswer(this.answer.courseId, this.answer.examId, this.answer)
+                if (response.code === 1) {
+                    this.$alert('试卷得分：' + response.response + '分', '考试结果', {
                         confirmButtonText: '返回课程页面',
                         callback: action => {
-                            _this.goBack()
+                            this.goBack()
                         }
                     })
                 } else {
-                    _this.$message.error(re.message)
+                    this.$message.error(response.message)
                 }
-                _this.formLoading = false
-            }).catch(e => {
-                console.error(e)
-                _this.$message.error('提交答案失败')
-                _this.formLoading = false
-            })
+            } catch (error) {
+                console.error('Submit course exam error:', error)
+                this.$message.error('提交答案失败')
+                // 如果课程考试API失败，尝试使用普通考试API
+                this.submitExamPaper()
+            } finally {
+                this.formLoading = false
+            }
+        },
+
+        // 提交普通考试答案
+        async submitExamPaper() {
+            try {
+                const response = await examPaperAnswerApi.answerSubmit(this.answer)
+                if (response.code === 1) {
+                    this.$alert('试卷得分：' + response.response + '分', '考试结果', {
+                        confirmButtonText: '返回课程页面',
+                        callback: action => {
+                            this.goBack()
+                        }
+                    })
+                } else {
+                    this.$message.error(response.message)
+                }
+            } catch (error) {
+                console.error('Submit exam paper error:', error)
+                this.$message.error('提交答案失败')
+            } finally {
+                this.formLoading = false
+            }
         },
         goBack() {
             // 返回课程详情页面
-            this.$router.push(`/student/course/${this.answer.courseId}`)
+            if (this.answer.courseId) {
+                this.$router.push(`/student/course/${this.answer.courseId}`)
+            } else {
+                this.$router.go(-1)
+            }
+        },
+
+        // 加载课程考试数据
+        async loadCourseExam(courseId, examId, paperId) {
+            try {
+                const response = await getExamDetail(courseId, examId)
+                if (response.code === 1) {
+                    this.form = response.response
+                    // 如果有考试时长设置，则优先使用考试设置的时长
+                    if (this.$route.query.duration) {
+                        this.remainTime = parseInt(this.$route.query.duration) * 60
+                    } else {
+                        this.remainTime = response.response.suggestTime * 60
+                    }
+                    this.initAnswer(paperId, examId, courseId)
+                    this.timeReduce()
+                } else {
+                    this.$message.error('获取考试信息失败: ' + response.message)
+                }
+            } catch (error) {
+                console.error('Load course exam error:', error)
+                this.$message.error('获取考试信息失败')
+                // 如果课程考试API失败，尝试使用普通考试API
+                this.loadExamPaper(paperId, examId, courseId)
+            } finally {
+                this.formLoading = false
+            }
+        },
+
+        // 加载普通考试数据
+        async loadExamPaper(paperId, examId, courseId) {
+            try {
+                const response = await examPaperApi.select(paperId)
+                this.form = response.response
+                // 如果有考试时长设置，则优先使用考试设置的时长
+                if (this.$route.query.duration) {
+                    this.remainTime = parseInt(this.$route.query.duration) * 60
+                } else {
+                    this.remainTime = response.response.suggestTime * 60
+                }
+                this.initAnswer(paperId, examId, courseId)
+                this.timeReduce()
+            } catch (error) {
+                console.error('Load exam paper error:', error)
+                this.$message.error('获取试卷信息失败')
+            } finally {
+                this.formLoading = false
+            }
         }
     },
     computed: {

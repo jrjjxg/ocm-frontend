@@ -27,16 +27,16 @@ export default {
   getQuestionList: (courseId, query) => post(`/api/teacher/courses/${courseId}/questions`, query),
   
   // 获取题目详情
-  getQuestion: (courseId, questionId) => get(`/api/teacher/courses/${courseId}/questions/${questionId}`),
+  getQuestion: (courseId, questionId) => post(`/api/teacher/courses/${courseId}/questions/${questionId}`),
   
   // 创建题目
-  createQuestion: (courseId, data) => post(`/api/teacher/courses/${courseId}/questions`, data),
+  createQuestion: (courseId, data) => post(`/api/teacher/courses/${courseId}/questions/edit`, data),
   
   // 更新题目
-  updateQuestion: (courseId, questionId, data) => put(`/api/teacher/courses/${courseId}/questions/${questionId}`, data),
+  updateQuestion: (courseId, questionId, data) => post(`/api/teacher/courses/${courseId}/questions/edit`, { ...data, id: questionId }),
   
   // 删除题目
-  deleteQuestion: (courseId, questionId) => del(`/api/teacher/courses/${courseId}/questions/${questionId}`),
+  deleteQuestion: (courseId, questionId) => post(`/api/teacher/courses/${courseId}/questions/${questionId}/delete`),
   
   // 试卷管理相关API
   // 获取试卷分页列表

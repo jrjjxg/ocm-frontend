@@ -142,12 +142,9 @@ export default {
         courseId: {
             type: [Number, String],
             required: true
-        },
-        examId: {
-            type: [Number, String],
-            required: true
         }
     },
+
     data() {
         return {
             activeTab: 'scores',
@@ -170,14 +167,32 @@ export default {
         }
     },
     computed: {
+        examId() {
+            return this.$route.params.examId
+        },
         ...mapState('enumItem', {
             questionTypeEnum: state => state.exam.question.typeEnum
         })
     },
+    watch: {
+        '$route.params.examId': {
+            immediate: true,
+            handler(newExamId) {
+                if (newExamId && newExamId !== 'undefined') {
+                    // 路由参数变化时重新加载数据
+                    this.fetchExamInfo()
+                    this.fetchStatistics()
+                    this.fetchAnswers()
+                }
+            }
+        }
+    },
     created() {
-        this.fetchExamInfo()
-        this.fetchStatistics()
-        this.fetchAnswers()
+        // watch已经处理了数据加载，这里只做错误检查
+        if (!this.examId || this.examId === 'undefined') {
+            this.$message.error('测验ID参数错误')
+            this.goBack()
+        }
     },
     mounted() {
         window.addEventListener('resize', this.resizeChart)
@@ -190,6 +205,10 @@ export default {
     },
     methods: {
         fetchExamInfo() {
+            if (!this.examId || this.examId === 'undefined') {
+                this.$message.error('测验ID参数错误')
+                return
+            }
             teacherExamApi.getExam(this.courseId, this.examId).then(res => {
                 if (res.code === 1) {
                     this.exam = res.response
@@ -202,6 +221,10 @@ export default {
             })
         },
         fetchStatistics() {
+            if (!this.examId || this.examId === 'undefined') {
+                this.$message.error('测验ID参数错误')
+                return
+            }
             this.statsLoading = true
             teacherExamApi.getStatistics(this.courseId, this.examId).then(res => {
                 if (res.code === 1) {
@@ -295,6 +318,10 @@ export default {
             this.fetchAnswers()
         },
         fetchAnswers() {
+            if (!this.examId || this.examId === 'undefined') {
+                this.$message.error('测验ID参数错误')
+                return
+            }
             this.loading = true
             teacherExamApi.getExamAnswers(this.courseId, this.examId, this.queryParam).then(res => {
                 if (res.code === 1) {
@@ -335,6 +362,10 @@ export default {
             return percent.toFixed(1) + '%'
         },
         viewAnswer(row) {
+            if (!this.examId || this.examId === 'undefined') {
+                this.$message.error('测验ID参数错误')
+                return
+            }
             this.$router.push({
                 path: `/teacher/course/${this.courseId}/exam/${this.examId}/answer/${row.id}`
             })

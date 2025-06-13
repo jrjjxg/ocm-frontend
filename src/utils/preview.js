@@ -25,9 +25,21 @@ export function getResourceFullUrl(url) {
         return url;
     }
 
-    // 使用相对路径，依赖Vue的代理配置
-    // 确保URL以斜杠开头
-    return url.startsWith('/') ? url : '/' + url;
+    // 如果是以/api开头的，说明是API路径，直接返回（会被代理处理）
+    if (url.startsWith('/api')) {
+        return url;
+    }
+
+    // 对于资源文件，确保通过代理访问后端
+    // 确保URL以斜杠开头，并且不重复添加/resources前缀
+    let resourceUrl = url.startsWith('/') ? url : '/' + url;
+    
+    // 如果URL不是以/resources开头，则添加该前缀
+    if (!resourceUrl.startsWith('/resources')) {
+        resourceUrl = '/resources' + resourceUrl;
+    }
+    
+    return resourceUrl;
 }
 
 /**

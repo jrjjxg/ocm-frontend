@@ -177,7 +177,7 @@
                 </el-form-item>
                 <el-form-item v-if="dialogStatus === 'update' && tempResource.url" label="当前文件">
                     <a :href="getResourceFullUrl(tempResource.url)" target="_blank">{{ tempResource.url.split('/').pop()
-                    }}</a>
+                        }}</a>
                     (编辑状态暂不支持直接替换文件)
                 </el-form-item>
             </el-form>
@@ -406,14 +406,25 @@ export default {
             this.courseName = name || `ID: ${id}`; // 如果没有名称，显示ID
             this.getList(); // 只保留一个获取资源的方法，使用已经正常工作的getList
             // 设置上传 URL
-            this.uploadUrl = `/api/teacher/course/${this.validCourseId}/resource/upload`;
+            this.uploadUrl = `/api/teacher/courses/${this.validCourseId}/resources/upload`;
             // 设置上传文件请求头，包含认证信息
             this.uploadHeaders = {
                 Authorization: 'Bearer ' + localStorage.getItem('token')
             }
         } else {
-            this.$message.error('未找到课程ID，无法加载资源列表。');
-            this.listLoading = false;
+            // 如果路由参数中没有id，尝试从props中获取
+            if (this.courseId) {
+                this.localCourseId = parseInt(this.courseId);
+                this.courseName = `课程 ${this.courseId}`;
+                this.getList();
+                this.uploadUrl = `/api/teacher/courses/${this.validCourseId}/resources/upload`;
+                this.uploadHeaders = {
+                    Authorization: 'Bearer ' + localStorage.getItem('token')
+                }
+            } else {
+                this.$message.error('未找到课程ID，无法加载资源列表。');
+                this.listLoading = false;
+            }
         }
     },
     methods: {
@@ -496,10 +507,14 @@ export default {
                         console.log('完整URL:', this.getResourceFullUrl(this.list[0].url))
                     }
                 } else {
+                    this.list = []
+                    this.total = 0
                     this.$message.error(result.message || '获取列表失败')
                 }
             } catch (error) {
                 console.error('Error fetching resource list:', error)
+                this.list = []
+                this.total = 0
                 this.$message.error('获取列表失败，请检查网络或联系管理员')
             }
             this.listLoading = false

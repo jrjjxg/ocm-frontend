@@ -10,9 +10,15 @@ import '@/styles/index.scss' // global css
 import './icons' // icon
 import NProgress from 'nprogress' // progress bar
 import 'nprogress/nprogress.css' // progress bar style
+import { parseTime } from '@/utils/index'
 
 Vue.use(Element, {
   size: 'medium' // set element-ui default size
+})
+
+// 注册全局过滤器
+Vue.filter('parseTime', (time, cFormat) => {
+  return parseTime(time, cFormat)
 })
 
 Vue.config.productionTip = false

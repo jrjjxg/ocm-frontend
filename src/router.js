@@ -189,19 +189,7 @@ const constantRoutes = [
     },
     alwaysShow: true,
     children: [
-      {
-        path: 'subject/list',
-        component: () => import('@/views/education/subject/list'),
-        name: 'EducationSubjectPage',
-        meta: { title: '学科列表', noCache: true }
-      },
-      {
-        path: 'subject/edit',
-        component: () => import('@/views/education/subject/edit'),
-        name: 'EducationSubjectEditPage',
-        meta: { title: '学科编辑', noCache: true, activeMenu: '/education/subject/list' },
-        hidden: true
-      },
+
       {
         path: 'course/list',
         component: () => import('@/views/education/course/list'),
@@ -309,16 +297,16 @@ const constantRoutes = [
   },
   {
     path: '/teacher',
-    component: Layout,
-    redirect: '/teacher/course/list',
+    component: () => import('@/layout/TeacherLayout'),
+    redirect: '/teacher/index',
     name: 'TeacherArea',
     meta: { title: '教师空间', icon: 'education', roles: [2] },
     children: [
       {
-        path: 'course/list',
+        path: 'index',
         component: () => import('@/views/teacher/course/list'),
-        name: 'TeacherCourseList',
-        meta: { title: '我的课程', icon: 'home', affix: true, noCache: true }
+        name: 'TeacherIndex',
+        meta: { title: '教师空间', icon: 'home', affix: true, noCache: true }
       },
       {
         path: 'course/detail',
@@ -341,16 +329,105 @@ const constantRoutes = [
             meta: { title: '课程概览', noCache: true }
           },
           {
-            path: 'assignments',
-            component: () => import('@/views/teacher/course/assignments'),
-            name: 'CourseAssignments',
+            path: 'homework',
+            component: () => import('@/views/teacher/course/homework'),
+            name: 'CourseHomework',
             meta: { title: '作业管理', noCache: true }
+          },
+          {
+            path: 'homework/create',
+            component: () => import('@/views/teacher/course/homeworkCreate'),
+            name: 'CourseHomeworkCreate',
+            meta: { title: '创建作业', noCache: true, activeMenu: '/teacher/course/:id/homework' },
+            hidden: true
+          },
+          {
+            path: 'homework/edit/:homeworkId',
+            component: () => import('@/views/teacher/course/homeworkCreate'),
+            name: 'CourseHomeworkEdit',
+            meta: { title: '编辑作业', noCache: true, activeMenu: '/teacher/course/:id/homework' },
+            hidden: true
+          },
+          {
+            path: 'homework/detail/:homeworkId',
+            component: () => import('@/views/teacher/course/homeworkDetail_new'),
+            name: 'CourseHomeworkDetail',
+            meta: { title: '作业详情', noCache: true, activeMenu: '/teacher/course/:id/homework' },
+            hidden: true
+          },
+          {
+            path: 'homework/grade/:homeworkId',
+            component: () => import('@/views/teacher/course/homeworkGrade'),
+            name: 'CourseHomeworkGrade',
+            meta: { title: '批改作业', noCache: true, activeMenu: '/teacher/course/:id/homework' },
+            hidden: true
+          },
+          {
+            path: 'homework/statistics/:homeworkId',
+            component: () => import('@/views/teacher/course/homeworkStatistics'),
+            name: 'CourseHomeworkStatistics',
+            meta: { title: '作业统计', noCache: true, activeMenu: '/teacher/course/:id/homework' },
+            hidden: true
           },
           {
             path: 'exams',
             component: () => import('@/views/teacher/course/exams'),
             name: 'CourseExams',
             meta: { title: '测验管理', noCache: true }
+          },
+          {
+            path: 'exam/:examId/results',
+            component: () => import('@/views/teacher/course/examResults'),
+            name: 'CourseExamResults',
+            meta: { title: '测验成绩', noCache: true, activeMenu: '/teacher/course/:id/exams' },
+            hidden: true
+          },
+          {
+            path: 'exam/:examId/answer/:answerId',
+            component: () => import('@/views/teacher/course/examAnswer'),
+            name: 'CourseExamAnswer',
+            meta: { title: '答卷评阅', noCache: true, activeMenu: '/teacher/course/:id/exams' },
+            hidden: true
+          },
+          {
+            path: 'questionBank',
+            component: () => import('@/views/teacher/course/questionBank'),
+            name: 'CourseQuestionBank',
+            meta: { title: '题库管理', noCache: true }
+          },
+          {
+            path: 'question/edit/:type',
+            component: () => import('@/views/teacher/course/questionEdit'),
+            name: 'CourseQuestionEdit',
+            meta: { title: '题目编辑', noCache: true, activeMenu: '/teacher/course/:id/questionBank' },
+            hidden: true,
+            props: true
+          },
+          {
+            path: 'papers',
+            component: () => import('@/views/teacher/course/papers'),
+            name: 'CoursePapers',
+            meta: { title: '试卷管理', noCache: true }
+          },
+          {
+            path: 'paper/edit',
+            component: () => import('@/views/teacher/course/paperEdit'),
+            name: 'CoursePaperEdit',
+            meta: { title: '试卷编辑', noCache: true, activeMenu: '/teacher/course/:id/papers' },
+            hidden: true
+          },
+          {
+            path: 'discussion',
+            component: () => import('@/views/teacher/course/discussion'),
+            name: 'CourseDiscussion',
+            meta: { title: '课程讨论', noCache: true }
+          },
+          {
+            path: 'discussion/:discussionId',
+            component: () => import('@/views/teacher/course/discussionDetail'),
+            name: 'CourseDiscussionDetail',
+            meta: { title: '讨论详情', noCache: true, activeMenu: '/teacher/course/:courseId/discussion' },
+            hidden: true
           },
           {
             path: 'resources',
@@ -365,45 +442,10 @@ const constantRoutes = [
             meta: { title: '学生管理', noCache: true }
           },
           {
-            path: 'questionBank',
-            component: () => import('@/views/teacher/course/questionBank'),
-            name: 'CourseQuestionBank',
-            meta: { title: '题库管理', noCache: true }
-          },
-          {
-            path: 'papers',
-            component: () => import('@/views/teacher/course/papers'),
-            name: 'CoursePapers',
-            meta: { title: '试卷管理', noCache: true }
-          },
-          {
-            path: 'exam/:examId/results',
-            component: () => import('@/views/teacher/course/examResults'),
-            name: 'CourseExamResults',
-            meta: { title: '测验成绩', noCache: true, activeMenu: '/teacher/course/:id/exams' },
-            hidden: true
-          },
-          {
-            path: 'question/edit/:type',
-            component: () => import('@/views/teacher/course/questionEdit'),
-            name: 'CourseQuestionEdit',
-            meta: { title: '题目编辑', noCache: true, activeMenu: '/teacher/course/:id/questionBank' },
-            hidden: true,
-            props: true
-          },
-          {
-            path: 'paper/edit',
-            component: () => import('@/views/teacher/course/paperEdit'),
-            name: 'CoursePaperEdit',
-            meta: { title: '试卷编辑', noCache: true, activeMenu: '/teacher/course/:id/papers' },
-            hidden: true
-          },
-          {
-            path: 'exam/:examId/answer/:answerId',
-            component: () => import('@/views/teacher/course/examAnswer'),
-            name: 'CourseExamAnswer',
-            meta: { title: '答卷评阅', noCache: true, activeMenu: '/teacher/course/:id/exams' },
-            hidden: true
+            path: 'grades',
+            component: () => import('@/views/teacher/course/grades'),
+            name: 'CourseGrades',
+            meta: { title: '成绩统计', noCache: true }
           }
         ]
       }
@@ -449,6 +491,19 @@ const constantRoutes = [
             meta: { title: '课程概览', noCache: true }
           },
           {
+            path: 'discussion',
+            component: () => import('@/views/student/course/discussion'),
+            name: 'StudentCourseDiscussion',
+            meta: { title: '课程讨论', noCache: true }
+          },
+          {
+            path: 'discussion/:discussionId',
+            component: () => import('@/views/student/course/discussionDetail'),
+            name: 'StudentCourseDiscussionDetail',
+            meta: { title: '讨论详情', noCache: true, activeMenu: '/student/course/:id/discussion' },
+            hidden: true
+          },
+          {
             path: 'resources',
             component: () => import('@/views/student/course/resources'),
             name: 'StudentCourseResources',
@@ -461,27 +516,79 @@ const constantRoutes = [
             meta: { title: '课程测验', noCache: true }
           },
           {
-            path: 'exam/:examId',
-            component: () => import('@/views/student/course/examDetail'),
-            name: 'StudentCourseExamDetail',
-            meta: { title: '测验详情', noCache: true, activeMenu: '/student/course/:id/exams' },
-            hidden: true
+            path: 'grades',
+            component: () => import('@/views/student/course/grades'),
+            name: 'StudentCourseGrades',
+            meta: { title: '我的成绩', noCache: true }
           },
           {
-            path: 'exam/:examId/do',
-            component: () => import('@/views/student/course/examDo'),
-            name: 'StudentCourseExamDo',
-            meta: { title: '参加测验', noCache: true, activeMenu: '/student/course/:id/exams' },
-            hidden: true
-          },
-          {
-            path: 'exam/:examId/result',
-            component: () => import('@/views/student/course/examResult'),
-            name: 'StudentCourseExamResult',
-            meta: { title: '测验结果', noCache: true, activeMenu: '/student/course/:id/exams' },
-            hidden: true
+            path: 'homework',
+            component: () => import('@/views/student/course/homework'),
+            name: 'StudentCourseHomework',
+            meta: { title: '课程作业', noCache: true }
           }
         ]
+      },
+      {
+        path: 'homework',
+        component: () => import('@/views/student/homework/HomeworkList'),
+        name: 'StudentHomeworkList',
+        meta: { title: '我的作业', icon: 'edit', noCache: true }
+      },
+      {
+        path: 'homework/answer/:id',
+        component: () => import('@/views/student/homework/HomeworkAnswer'),
+        name: 'StudentHomeworkAnswer',
+        meta: { title: '作业答题', noCache: true, activeMenu: '/student/homework' },
+        hidden: true
+      },
+      {
+        path: 'homework/result/:id',
+        component: () => import('@/views/student/homework/HomeworkResult'),
+        name: 'StudentHomeworkResult',
+        meta: { title: '作业结果', noCache: true, activeMenu: '/student/homework' },
+        hidden: true
+      },
+      {
+        path: 'exam/:id/do',
+        component: () => import('@/views/student/exam/do'),
+        name: 'StudentExamDo',
+        meta: { title: '在线考试', noCache: true },
+        hidden: true
+      },
+      {
+        path: 'exam/:id/result',
+        component: () => import('@/views/student/exam/result'),
+        name: 'StudentExamResult',
+        meta: { title: '考试结果', noCache: true },
+        hidden: true
+      },
+      {
+        path: 'homework/test',
+        component: () => import('@/views/student/homework/HomeworkTest'),
+        name: 'HomeworkTest',
+        meta: { title: '作业功能测试', noCache: true },
+        hidden: true
+      }
+    ]
+  },
+  // 全屏布局路由 - 用于答题页面
+  {
+    path: '/fullscreen',
+    component: () => import('@/layout/FullscreenLayout'),
+    hidden: true,
+    children: [
+      {
+        path: 'homework/answer/:id',
+        component: () => import('@/views/student/homework/HomeworkAnswer'),
+        name: 'FullscreenHomeworkAnswer',
+        meta: { title: '作业答题', noCache: true, roles: [1] }
+      },
+      {
+        path: 'exam/:id/do',
+        component: () => import('@/views/student/exam/do'),
+        name: 'FullscreenExamDo',
+        meta: { title: '在线考试', noCache: true, roles: [1] }
       }
     ]
   },
