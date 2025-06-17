@@ -620,6 +620,20 @@ var constantRoutes = [{
       },
       hidden: true
     }, {
+      path: 'homework/:homeworkId/students/:studentId/answers',
+      component: function component() {
+        return Promise.resolve().then(function () {
+          return _interopRequireWildcard(require('@/views/teacher/course/homeworkAnswerView'));
+        });
+      },
+      name: 'CourseHomeworkAnswerView',
+      meta: {
+        title: '查看学生答题',
+        noCache: true,
+        activeMenu: '/teacher/course/:id/homework'
+      },
+      hidden: true
+    }, {
       path: 'exams',
       component: function component() {
         return Promise.resolve().then(function () {
@@ -966,6 +980,19 @@ var constantRoutes = [{
       title: '作业结果',
       noCache: true,
       activeMenu: '/student/homework'
+    },
+    hidden: true
+  }, {
+    path: 'exam/:id/detail',
+    component: function component() {
+      return Promise.resolve().then(function () {
+        return _interopRequireWildcard(require('@/views/student/exam/detail'));
+      });
+    },
+    name: 'StudentExamDetail',
+    meta: {
+      title: '考试详情',
+      noCache: true
     },
     hidden: true
   }, {

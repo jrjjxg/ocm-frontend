@@ -86,7 +86,7 @@
         <!-- 提交区域 -->
         <div class="submit-area">
             <el-button type="primary" size="large" @click="submitHomework" :loading="submitting" :disabled="!canSubmit">
-                提交作业
+                {{ submitButtonText }}
             </el-button>
             <el-button size="large" @click="saveAnswers" :loading="saving">
                 保存草稿
@@ -131,7 +131,9 @@ export default {
             remainingTime: 0,
             timer: null,
             currentQuestionIndex: 0,
-            autoSaveTimer: null
+            autoSaveTimer: null,
+            maxAttempts: 0,
+            submittedCount: 0
         }
     },
     computed: {
@@ -142,7 +144,19 @@ export default {
             }).length
         },
         canSubmit() {
+            if (this.maxAttempts !== 0 && this.submittedCount >= this.maxAttempts) {
+                return false
+            }
             return this.answeredCount > 0
+        },
+        submitButtonText() {
+            if (this.maxAttempts === 0) {
+                return '提交作业'
+            }
+            if (this.submittedCount < this.maxAttempts) {
+                return `提交作业 (${this.submittedCount + 1}/${this.maxAttempts})`
+            }
+            return '已达提交上限'
         }
     },
     mounted() {
@@ -175,6 +189,8 @@ export default {
                 if (response.code === 1) {
                     this.homework = response.response
                     this.questions = response.response.questions || []
+                    this.maxAttempts = response.response.maxAttempts || 0
+                    this.submittedCount = response.response.submittedCount || 0
 
                     // 初始化答案对象 - 确保所有题目都有对应的答案字段
                     const initialAnswers = {}
@@ -325,34 +341,58 @@ export default {
 
         async submitHomework() {
             if (!this.canSubmit) {
-                this.$message.warning('请至少回答一道题目')
+                this.$message.warning('没有可提交的答案或已达到提交上限')
                 return
             }
 
-            this.$confirm('确定要提交作业吗？提交后将无法修改。', '提示', {
-                confirmButtonText: '确定提交',
-                cancelButtonText: '取消',
-                type: 'warning'
-            }).then(async () => {
-                this.submitting = true
-                try {
-                    const courseId = this.$route.query.courseId
-                    const homeworkId = this.homework.id
+            if (this.maxAttempts !== 0 && this.submittedCount >= this.maxAttempts) {
+                this.$message.error('您已达到最大提交次数，无法再次提交。')
+                return
+            }
 
-                    await submitHomeworkAnswer(courseId, homeworkId, {
-                        answers: this.answers
-                    })
-                    this.$message.success('作业提交成功！')
-                    this.$router.push({
-                        path: `/student/homework/result/${homeworkId}`,
-                        query: { courseId: courseId }
-                    })
-                } catch (error) {
-                    this.$message.error('提交失败：' + (error.message || '未知错误'))
-                } finally {
-                    this.submitting = false
+            try {
+                await this.$confirm('确定要提交作业吗？提交后将无法修改。', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                })
+
+                this.submitting = true
+                const homeworkId = this.$route.params.id
+                const courseId = this.$route.query.courseId
+
+                const formattedAnswers = Object.keys(this.answers).map(questionId => {
+                    return {
+                        questionId: parseInt(questionId),
+                        answer: this.answers[questionId]
+                    }
+                })
+
+                const payload = {
+                    homeworkId,
+                    courseId,
+                    answers: formattedAnswers
                 }
-            })
+
+                console.log('提交的答案:', payload)
+
+                await submitHomeworkAnswer(payload)
+
+                this.$message.success('作业提交成功！')
+                this.$router.push({
+                    name: 'HomeworkResult',
+                    params: { id: homeworkId },
+                    query: { courseId }
+                })
+
+            } catch (error) {
+                if (error !== 'cancel') {
+                    console.error('提交作业失败:', error)
+                    this.$message.error(error.message || '提交失败，请稍后重试')
+                }
+            } finally {
+                this.submitting = false
+            }
         },
 
         async saveAnswers() {

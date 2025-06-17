@@ -10,8 +10,15 @@ export function getStudentExams(courseId, params) {
 /**
  * 获取测验详情（学生端）
  */
-export function getExamDetail(courseId, examId) {
+export function getExamDetail(examId, courseId) {
   return get(`/api/student/courses/${courseId}/exams/${examId}`)
+}
+
+/**
+ * 获取考试历史记录
+ */
+export function getExamHistoryRecords(examId, courseId) {
+  return get(`/api/student/courses/${courseId}/exams/${examId}/history`)
 }
 
 /**
@@ -49,12 +56,39 @@ export function getStudentExamAnswers(courseId, examId) {
   return get(`/api/student/courses/${courseId}/exams/${examId}/answers`)
 }
 
+// 独立考试相关接口
+
+/**
+ * 获取试卷详情
+ */
+export function getExamPaper(examPaperId) {
+  return get(`/api/student/exam-papers/${examPaperId}`)
+}
+
+/**
+ * 提交考试答案
+ */
+export function submitExamPaper(examPaperId, data) {
+  return post(`/api/student/exam-papers/${examPaperId}/submit`, data)
+}
+
+/**
+ * 获取考试状态
+ */
+export function getExamStatus(examPaperId) {
+  return get(`/api/student/exam-papers/${examPaperId}/status`)
+}
+
 export default {
   getStudentExams,
   getExamDetail,
+  getExamHistoryRecords,
   startExam,
   submitExamAnswer,
   saveExamDraft,
   getExamResult,
-  getStudentExamAnswers
+  getStudentExamAnswers,
+  getExamPaper,
+  submitExamPaper,
+  getExamStatus
 } 

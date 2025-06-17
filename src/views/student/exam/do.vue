@@ -44,7 +44,9 @@
                         </el-card>
                     </el-row>
                     <el-row class="do-align-center">
-                        <el-button type="primary" @click="submitForm">提交</el-button>
+                        <el-button type="primary" @click="submitForm" :disabled="submitButtonDisabled">{{
+                            submitButtonText
+                        }}</el-button>
                         <el-button @click="goBack">取消</el-button>
                     </el-row>
                 </el-form>
@@ -61,6 +63,7 @@ import studentExamApi from '@/api/studentExam'
 import examPaperApi from '@/api/examPaper'
 import examPaperAnswerApi from '@/api/examPaperAnswer'
 import { getExamDetail, submitExamAnswer } from '@/api/student/exam'
+import * as examApi from '@/api/student/exam'
 
 export default {
     components: { QuestionEdit },
@@ -76,7 +79,12 @@ export default {
                 answerItems: []
             },
             timer: null,
-            remainTime: 0
+            remainTime: 0,
+            examStatus: {
+                maxAttempts: 1,
+                submittedCount: 0,
+                canSubmit: true
+            }
         }
     },
     created() {
@@ -97,6 +105,24 @@ export default {
     },
     beforeDestroy() {
         window.clearInterval(this.timer)
+    },
+    computed: {
+        ...mapGetters('enumItem', ['enumFormat']),
+        ...mapState('enumItem', {
+            doCompletedTag: state => state.exam.question.answer.doCompletedTag
+        }),
+        submitButtonDisabled() {
+            return !this.examStatus.canSubmit
+        },
+        submitButtonText() {
+            if (!this.examStatus.canSubmit) {
+                return `已达到最大提交次数 (${this.examStatus.submittedCount}/${this.examStatus.maxAttempts})`
+            }
+            if (this.examStatus.maxAttempts > 1) {
+                return `提交 (第${this.examStatus.submittedCount + 1}次，共${this.examStatus.maxAttempts}次机会)`
+            }
+            return '提交'
+        }
     },
     methods: {
         formatSeconds(theTime) {
@@ -178,7 +204,46 @@ export default {
         // 提交普通考试答案
         async submitExamPaper() {
             try {
-                const response = await examPaperAnswerApi.answerSubmit(this.answer)
+                // 首先检查提交状态
+                if (this.answer.id) {
+                    const statusResponse = await examApi.getExamStatus(this.answer.id)
+                    if (statusResponse.code === 1) {
+                        const { maxAttempts, submittedCount, canSubmit } = statusResponse.response
+
+                        if (!canSubmit) {
+                            this.$alert(
+                                `您已达到最大提交次数限制（${submittedCount}/${maxAttempts}）`,
+                                '无法提交',
+                                {
+                                    confirmButtonText: '确定',
+                                    callback: () => {
+                                        this.goBack()
+                                    }
+                                }
+                            )
+                            return
+                        }
+
+                        // 如果还有提交机会，显示提醒
+                        if (maxAttempts > 0) {
+                            const remainingAttempts = maxAttempts - submittedCount
+                            const confirmMsg = `这是您的第${submittedCount + 1}次提交，您还有${remainingAttempts - 1}次机会。确定要提交吗？`
+
+                            const confirmed = await this.$confirm(confirmMsg, '提交确认', {
+                                confirmButtonText: '确定提交',
+                                cancelButtonText: '取消',
+                                type: 'warning'
+                            }).catch(() => false)
+
+                            if (!confirmed) {
+                                this.formLoading = false
+                                return
+                            }
+                        }
+                    }
+                }
+
+                const response = await examApi.submitExamPaper(this.answer.id, this.answer)
                 if (response.code === 1) {
                     this.$alert('试卷得分：' + response.response + '分', '考试结果', {
                         confirmButtonText: '返回课程页面',
@@ -205,59 +270,76 @@ export default {
             }
         },
 
-        // 加载课程考试数据
-        async loadCourseExam(courseId, examId, paperId) {
-            try {
-                const response = await getExamDetail(courseId, examId)
+        // 加载课程考试
+        loadCourseExam(courseId, examId, paperId) {
+            getExamDetail(courseId, examId).then(response => {
                 if (response.code === 1) {
                     this.form = response.response
-                    // 如果有考试时长设置，则优先使用考试设置的时长
-                    if (this.$route.query.duration) {
-                        this.remainTime = parseInt(this.$route.query.duration) * 60
-                    } else {
-                        this.remainTime = response.response.suggestTime * 60
-                    }
                     this.initAnswer(paperId, examId, courseId)
+                    this.remainTime = this.form.suggestTime * 60
                     this.timeReduce()
+
+                    // 对于课程考试，使用response中的实际试卷ID来检查状态
+                    const actualPaperId = this.form.id // 这是实际的试卷ID
+                    this.loadExamStatus(actualPaperId)
                 } else {
-                    this.$message.error('获取考试信息失败: ' + response.message)
+                    this.$message.error(response.message)
                 }
-            } catch (error) {
-                console.error('Load course exam error:', error)
-                this.$message.error('获取考试信息失败')
-                // 如果课程考试API失败，尝试使用普通考试API
-                this.loadExamPaper(paperId, examId, courseId)
-            } finally {
                 this.formLoading = false
-            }
+            }).catch(error => {
+                console.error('Load course exam error:', error)
+                this.$message.error('加载考试失败')
+                this.formLoading = false
+            })
         },
 
-        // 加载普通考试数据
-        async loadExamPaper(paperId, examId, courseId) {
-            try {
-                const response = await examPaperApi.select(paperId)
-                this.form = response.response
-                // 如果有考试时长设置，则优先使用考试设置的时长
-                if (this.$route.query.duration) {
-                    this.remainTime = parseInt(this.$route.query.duration) * 60
+        // 加载普通考试
+        loadExamPaper(paperId, examId, courseId) {
+            examPaperApi.selectPaper(paperId).then(response => {
+                if (response.code === 1) {
+                    this.form = response.response
+                    this.initAnswer(paperId, examId, courseId)
+                    this.remainTime = this.form.suggestTime * 60
+                    this.timeReduce()
+
+                    // 加载考试状态
+                    this.loadExamStatus(paperId)
                 } else {
-                    this.remainTime = response.response.suggestTime * 60
+                    this.$message.error(response.message)
                 }
-                this.initAnswer(paperId, examId, courseId)
-                this.timeReduce()
-            } catch (error) {
-                console.error('Load exam paper error:', error)
-                this.$message.error('获取试卷信息失败')
-            } finally {
                 this.formLoading = false
+            }).catch(error => {
+                console.error('Load exam paper error:', error)
+                this.$message.error('加载考试失败')
+                this.formLoading = false
+            })
+        },
+
+        // 加载考试状态
+        async loadExamStatus(paperId) {
+            try {
+                const response = await examApi.getExamStatus(paperId)
+                if (response.code === 1) {
+                    this.examStatus = response.response
+                } else {
+                    // 如果获取状态失败，使用默认值，不影响主要功能
+                    console.warn('获取考试状态失败:', response.message)
+                    this.examStatus = {
+                        maxAttempts: this.form.maxAttempts || 1,
+                        submittedCount: 0,
+                        canSubmit: true
+                    }
+                }
+            } catch (error) {
+                console.error('Load exam status error:', error)
+                // 发生错误时使用默认值
+                this.examStatus = {
+                    maxAttempts: this.form.maxAttempts || 1,
+                    submittedCount: 0,
+                    canSubmit: true
+                }
             }
         }
-    },
-    computed: {
-        ...mapGetters('enumItem', ['enumFormat']),
-        ...mapState('enumItem', {
-            doCompletedTag: state => state.exam.question.answer.doCompletedTag
-        })
     }
 }
 </script>

@@ -159,7 +159,7 @@
 </template>
 
 <script>
-import { homeworkStatistics } from '@/api/teacher/homework'
+import { homeworkStatistics, homeworkSubmissions } from '@/api/teacher/homework'
 
 export default {
     name: 'HomeworkStatistics',
@@ -209,15 +209,44 @@ export default {
         async loadStatistics() {
             try {
                 this.loading = true
-                const homeworkId = this.$route.params.id
+                const courseId = this.$route.params.id  // 课程ID
+                const homeworkId = this.$route.params.homeworkId  // 作业ID
 
-                const response = await homeworkStatistics(homeworkId)
-                this.statistics = response.data?.statistics || {}
-                this.submissions = response.data?.submissions || []
-                this.totalStudents = response.data?.total || 0
+                if (!homeworkId || homeworkId === 'undefined') {
+                    this.$message.error('作业ID无效')
+                    this.mockData()
+                    return
+                }
+
+                // 并行获取统计数据和提交列表
+                const [statisticsResponse, submissionsResponse] = await Promise.all([
+                    homeworkStatistics(courseId, homeworkId),
+                    homeworkSubmissions(courseId, homeworkId, { pageIndex: 1, pageSize: 1000 })
+                ])
+
+                if (statisticsResponse.code === 1) {
+                    this.statistics = statisticsResponse.response || {}
+                    // 统计数据的字段名需要匹配后端返回的数据
+                    this.statistics.submitCount = this.statistics.submittedCount
+                    this.statistics.highestScore = this.statistics.maxScore
+                    this.statistics.lowestScore = this.statistics.minScore
+                } else {
+                    this.$message.error(statisticsResponse.message || '获取统计数据失败')
+                    this.mockData()
+                    return
+                }
+
+                if (submissionsResponse.code === 1 && submissionsResponse.response) {
+                    this.submissions = submissionsResponse.response.list || []
+                    this.totalStudents = submissionsResponse.response.statistics?.totalStudents || 0
+                } else {
+                    this.submissions = []
+                    this.totalStudents = 0
+                }
 
             } catch (error) {
                 this.$message.error('加载统计数据失败')
+                console.error('Load statistics error:', error)
                 // 模拟数据用于演示
                 this.mockData()
             } finally {
@@ -265,7 +294,9 @@ export default {
         },
 
         handleViewAnswers(student) {
-            this.$router.push(`/teacher/homework/grade/${this.$route.params.id}/student/${student.id}`)
+            const courseId = this.$route.params.id
+            const homeworkId = this.$route.params.homeworkId
+            this.$router.push(`/teacher/course/${courseId}/homework/${homeworkId}/students/${student.studentId}/answers`)
         }
     }
 }

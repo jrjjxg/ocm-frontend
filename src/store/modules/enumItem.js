@@ -20,7 +20,12 @@ const state = {
         { key: 2, value: '/exam/question/edit/multipleChoice', name: '多选题' },
         { key: 3, value: '/exam/question/edit/trueFalse', name: '判断题' },
         { key: 4, value: '/exam/question/edit/gapFilling', name: '填空题' },
-        { key: 5, value: '/exam/question/edit/shortAnswer', name: '简答题' }]
+        { key: 5, value: '/exam/question/edit/shortAnswer', name: '简答题' }],
+      answer: {
+        doCompletedTag: [{ key: false, value: '' }, { key: true, value: 'success' }],
+        doRightEnum: [{ key: false, value: '错误' }, { key: true, value: '正确' }],
+        doRightTag: [{ key: false, value: 'danger' }, { key: true, value: 'success' }]
+      }
     }
   }
 }

@@ -62,9 +62,9 @@
                                     </el-form-item>
                                 </el-col>
                                 <el-col :span="8">
-                                    <el-form-item label="答题次数" prop="attemptLimit">
-                                        <el-input-number v-model="homeworkForm.attemptLimit" :min="1" :max="10"
-                                            style="width: 100%" />
+                                    <el-form-item label="允许多次提交" prop="maxAttempts">
+                                        <el-input-number v-model="homeworkForm.maxAttempts" :min="0" :max="10"
+                                            style="width: 100%" placeholder="0为不限制" />
                                     </el-form-item>
                                 </el-col>
                                 <el-col :span="8">
@@ -127,7 +127,7 @@
                                                             size="mini">
                                                             {{ getQuestionTypeName(question.questionType) }}
                                                         </el-tag>
-                                                        <span class="question-score">{{ question.score / 10 }}分</span>
+                                                        <span class="question-score">{{ question.score }}分</span>
                                                     </div>
                                                     <div class="question-actions">
                                                         <el-checkbox :value="isQuestionSelected(question.id)"
@@ -317,7 +317,7 @@ export default {
                 description: '',
                 courseId: null,
                 totalScore: 100,
-                attemptLimit: 1,
+                maxAttempts: 0,
                 timeLimit: 0
             },
 

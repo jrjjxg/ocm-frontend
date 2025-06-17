@@ -34,11 +34,31 @@
         </div>
         <div v-else-if="qType == 4" v-loading="qLoading">
             <div class="q-title" v-html="question.title" />
+            <div style="color: #999; font-size: 12px; margin-bottom: 10px;" v-if="false">
+                DEBUG: questionType={{ qType }}, items.length={{ question.items ? question.items.length : 'null' }},
+                title contains gapfilling: {{ question.title && question.title.includes('gapfilling-span') }},
+                title: "{{ question.title }}"
+            </div>
             <div>
-                <el-form-item :label="item.prefix" :key="item.prefix" v-for="item in question.items" label-width="50px"
-                    style="margin-top: 10px;margin-bottom: 10px;">
-                    <el-input v-model="answer.contentArray[item.prefix - 1]" @change="answer.completed = true" />
-                </el-form-item>
+                <template v-if="question.items && question.items.length > 0">
+                    <el-form-item :label="item.prefix" :key="item.prefix" v-for="item in question.items"
+                        label-width="50px" style="margin-top: 10px;margin-bottom: 10px;">
+                        <el-input v-model="answer.contentArray[item.prefix - 1]" @change="answer.completed = true" />
+                    </el-form-item>
+                </template>
+
+                <template v-else-if="question.title && question.title.includes('gapfilling-span')">
+                    <el-form-item v-for="(blank, index) in parseGapFillingBlanks(question.title)" :key="blank.uuid"
+                        :label="blank.prefix" label-width="50px" style="margin-top: 10px;margin-bottom: 10px;">
+                        <el-input v-model="answer.contentArray[index]" @change="answer.completed = true" />
+                    </el-form-item>
+                </template>
+
+                <template v-else>
+                    <el-form-item label="答案" label-width="50px" style="margin-top: 10px;margin-bottom: 10px;">
+                        <el-input v-model="answer.content" @change="answer.completed = true" placeholder="请输入填空答案" />
+                    </el-form-item>
+                </template>
             </div>
         </div>
         <div v-else-if="qType == 5" v-loading="qLoading">
@@ -78,6 +98,17 @@ export default {
         }
     },
     methods: {
+        parseGapFillingBlanks(title) {
+            const blanks = [];
+            let index = 0;
+            let match;
+            const regex = /gapfilling-span-(\d+)/g;
+            while ((match = regex.exec(title)) !== null) {
+                blanks.push({ prefix: match[1], uuid: match.input });
+                index++;
+            }
+            return blanks;
+        }
     }
 }
 </script>

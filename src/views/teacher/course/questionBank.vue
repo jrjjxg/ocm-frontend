@@ -41,7 +41,6 @@
             </el-table-column>
             <el-table-column prop="shortTitle" label="题干" show-overflow-tooltip></el-table-column>
             <el-table-column prop="score" label="分数" width="80"></el-table-column>
-            <el-table-column prop="difficult" label="难度" width="80"></el-table-column>
             <el-table-column label="操作" width="250" align="center">
                 <template slot-scope="scope">
                     <el-button size="mini" @click="previewQuestion(scope.row)">预览</el-button>

@@ -370,6 +370,13 @@ const constantRoutes = [
             hidden: true
           },
           {
+            path: 'homework/:homeworkId/students/:studentId/answers',
+            component: () => import('@/views/teacher/course/homeworkAnswerView'),
+            name: 'CourseHomeworkAnswerView',
+            meta: { title: '查看学生答题', noCache: true, activeMenu: '/teacher/course/:id/homework' },
+            hidden: true
+          },
+          {
             path: 'exams',
             component: () => import('@/views/teacher/course/exams'),
             name: 'CourseExams',
@@ -547,6 +554,13 @@ const constantRoutes = [
         component: () => import('@/views/student/homework/HomeworkResult'),
         name: 'StudentHomeworkResult',
         meta: { title: '作业结果', noCache: true, activeMenu: '/student/homework' },
+        hidden: true
+      },
+      {
+        path: 'exam/:id/detail',
+        component: () => import('@/views/student/exam/detail'),
+        name: 'StudentExamDetail',
+        meta: { title: '考试详情', noCache: true },
         hidden: true
       },
       {

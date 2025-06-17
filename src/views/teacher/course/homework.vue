@@ -12,47 +12,6 @@
       </div>
     </div>
 
-    <div class="homework-stats">
-      <el-row :gutter="20">
-        <el-col :span="6">
-          <el-card class="stat-card">
-            <div class="stat-content">
-              <div class="stat-number">{{ stats.total }}</div>
-              <div class="stat-label">总作业数</div>
-            </div>
-            <i class="el-icon-document stat-icon"></i>
-          </el-card>
-        </el-col>
-        <el-col :span="6">
-          <el-card class="stat-card">
-            <div class="stat-content">
-              <div class="stat-number">{{ stats.published }}</div>
-              <div class="stat-label">已发布</div>
-            </div>
-            <i class="el-icon-check stat-icon"></i>
-          </el-card>
-        </el-col>
-        <el-col :span="6">
-          <el-card class="stat-card">
-            <div class="stat-content">
-              <div class="stat-number">{{ stats.pending }}</div>
-              <div class="stat-label">待批改</div>
-            </div>
-            <i class="el-icon-time stat-icon"></i>
-          </el-card>
-        </el-col>
-        <el-col :span="6">
-          <el-card class="stat-card">
-            <div class="stat-content">
-              <div class="stat-number">{{ stats.graded }}</div>
-              <div class="stat-label">已批改</div>
-            </div>
-            <i class="el-icon-finished stat-icon"></i>
-          </el-card>
-        </el-col>
-      </el-row>
-    </div>
-
     <el-card class="homework-list-card">
       <div slot="header" class="card-header">
         <span>作业列表</span>
@@ -132,7 +91,6 @@
               </el-button>
               <el-dropdown-menu slot="dropdown">
                 <el-dropdown-item :command="{ action: 'delete', row: scope.row }">删除</el-dropdown-item>
-                <el-dropdown-item :command="{ action: 'duplicate', row: scope.row }">复制</el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
           </template>
@@ -269,8 +227,6 @@ export default {
     handleCommand({ action, row }) {
       if (action === 'delete') {
         this.deleteHomework(row)
-      } else if (action === 'duplicate') {
-        this.duplicateHomework(row)
       }
     },
 
@@ -293,15 +249,7 @@ export default {
       })
     },
 
-    async duplicateHomework(homework) {
-      try {
-        // TODO: 调用复制API
-        this.$message.success('复制成功')
-        this.loadHomeworkList()
-      } catch (error) {
-        this.$message.error('复制失败')
-      }
-    },
+
 
     handleSearch() {
       this.pageIndex = 1

@@ -7,6 +7,9 @@ export default {
   // 获取单个测验详情
   getExam: (courseId, examId) => get(`/api/teacher/courses/${courseId}/exams/${examId}`),
   
+  // 获取测验的试卷题目详情
+  getExamPaper: (courseId, examId) => get(`/api/teacher/courses/${courseId}/exams/${examId}/paper`),
+  
   // 创建新测验
   createExam: (courseId, data) => post(`/api/teacher/courses/${courseId}/exams`, data),
   
@@ -64,5 +67,8 @@ export default {
   evaluateAnswer: (courseId, examId, answerId, data) => put(`/api/teacher/courses/${courseId}/exams/${examId}/answers/${answerId}`, data),
   
   // 获取成绩统计数据
-  getStatistics: (courseId, examId) => get(`/api/teacher/courses/${courseId}/exams/${examId}/statistics`)
+  getStatistics: (courseId, examId) => get(`/api/teacher/courses/${courseId}/exams/${examId}/statistics`),
+  
+  // 获取答卷详细题目答案
+  getAnswerQuestions: (courseId, examId, answerId) => get(`/api/teacher/courses/${courseId}/exams/${examId}/answers/${answerId}/questions`)
 } 

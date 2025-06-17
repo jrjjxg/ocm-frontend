@@ -51,7 +51,7 @@
                     </div>
                     <div class="info-row">
                         <i class="el-icon-star"></i>
-                        <span>总分：{{ homework.totalScore / 10 }}分</span>
+                        <span>总分：{{ homework.totalScore }}分</span>
                     </div>
                     <div class="info-row">
                         <i class="el-icon-time"></i>
@@ -63,7 +63,8 @@
                     </div>
                     <div class="info-row" v-if="homework.score !== null && homework.score !== undefined">
                         <i class="el-icon-trophy"></i>
-                        <span>得分：{{ (homework.score / 10) || 0 }}分 ({{ Math.round(((homework.score / 10) || 0) / (homework.totalScore / 10) * 100) || 0 }}%)</span>
+                        <span>得分：{{ homework.score || 0 }}分 ({{ Math.round((homework.score || 0) / homework.totalScore *
+                            100) || 0 }}%)</span>
                     </div>
                 </div>
 

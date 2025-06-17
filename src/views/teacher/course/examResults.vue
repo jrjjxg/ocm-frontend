@@ -96,7 +96,78 @@
             </el-tab-pane>
             <el-tab-pane label="题目分析" name="questions">
                 <div class="question-analysis" v-loading="questionsLoading">
-                    <div v-if="questionStats.length > 0">
+                    <!-- 显示试卷题目详情 -->
+                    <div v-if="paper && paper.titleItems && paper.titleItems.length > 0">
+                        <div v-for="(titleItem, titleIndex) in paper.titleItems" :key="titleIndex"
+                            class="title-section">
+                            <h3 class="section-title">{{ titleItem.name }}</h3>
+                            <div v-for="(question, qIndex) in titleItem.questionItems" :key="qIndex"
+                                class="question-item">
+                                <div class="question-header">
+                                    <h4 class="question-title">
+                                        {{ titleIndex + 1 }}.{{ qIndex + 1 }} {{ question.title }}
+                                        <span class="question-score">({{ question.score }}分)</span>
+                                    </h4>
+                                    <span class="question-type-tag">{{ formatQuestionType(question.questionType)
+                                    }}</span>
+                                </div>
+
+                                <!-- 选择题选项 -->
+                                <div v-if="question.questionType === 1 || question.questionType === 2"
+                                    class="question-options">
+                                    <div v-for="(item, itemIndex) in question.questionItemObjects" :key="itemIndex"
+                                        class="option-item">
+                                        <span class="option-prefix">{{ String.fromCharCode(65 + itemIndex) }}.</span>
+                                        <span>{{ item.content }}</span>
+                                        <el-tag v-if="item.correct" type="success" size="mini"
+                                            style="margin-left: 10px">正确答案</el-tag>
+                                    </div>
+                                </div>
+
+                                <!-- 判断题 -->
+                                <div v-else-if="question.questionType === 3" class="question-judge">
+                                    <el-tag :type="question.correct === 'true' ? 'success' : 'danger'" size="small">
+                                        正确答案: {{ question.correct === 'true' ? '正确' : '错误' }}
+                                    </el-tag>
+                                </div>
+
+                                <!-- 填空题 -->
+                                <div v-else-if="question.questionType === 4" class="question-fill">
+                                    <div class="correct-answer">
+                                        <span>参考答案: </span>
+                                        <el-tag type="success" size="small">{{ question.correct }}</el-tag>
+                                    </div>
+                                </div>
+
+                                <!-- 简答题 -->
+                                <div v-else-if="question.questionType === 5" class="question-essay">
+                                    <div class="answer-analysis">
+                                        <p><strong>答案要点:</strong></p>
+                                        <div class="answer-content">{{ question.correct || '请教师根据学生答案酌情给分' }}</div>
+                                    </div>
+                                </div>
+
+                                <!-- 题目统计信息（如果有的话） -->
+                                <div v-if="getQuestionStats(question.id)" class="question-stats">
+                                    <div class="stats-row">
+                                        <span class="stat-label">平均得分:</span>
+                                        <span class="stat-value">{{
+                                            getQuestionStats(question.id).averageScore.toFixed(1) }}分</span>
+                                        <span class="stat-label" style="margin-left: 20px;">正确率:</span>
+                                        <span class="stat-value">{{ (getQuestionStats(question.id).correctRate *
+                                            100).toFixed(1)
+                                        }}%</span>
+                                    </div>
+                                    <el-progress :percentage="getQuestionStats(question.id).correctRate * 100"
+                                        :format="percentFormat" style="margin-top: 5px;">
+                                    </el-progress>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 如果没有试卷题目信息，显示统计数据 -->
+                    <div v-else-if="questionStats.length > 0">
                         <div v-for="(question, index) in questionStats" :key="index" class="question-stat-item">
                             <div class="question-info">
                                 <h4>{{ index + 1 }}. {{ question.title }}</h4>
@@ -121,6 +192,7 @@
                             </div>
                         </div>
                     </div>
+
                     <div v-else class="no-data">
                         暂无题目分析数据
                     </div>
@@ -152,6 +224,8 @@ export default {
             statsLoading: false,
             questionsLoading: false,
             exam: null,
+            isExamReady: false,
+            paper: null,
             statistics: null,
             answers: [],
             total: 0,
@@ -180,9 +254,12 @@ export default {
             handler(newExamId) {
                 if (newExamId && newExamId !== 'undefined') {
                     // 路由参数变化时重新加载数据
-                    this.fetchExamInfo()
-                    this.fetchStatistics()
-                    this.fetchAnswers()
+                    this.fetchExamInfo().then(() => {
+                        if (this.isExamReady) {
+                            this.fetchStatistics()
+                            this.fetchAnswers()
+                        }
+                    })
                 }
             }
         }
@@ -207,11 +284,15 @@ export default {
         fetchExamInfo() {
             if (!this.examId || this.examId === 'undefined') {
                 this.$message.error('测验ID参数错误')
-                return
+                return Promise.reject(new Error('测验ID参数错误'))
             }
-            teacherExamApi.getExam(this.courseId, this.examId).then(res => {
+            this.isExamReady = false
+            return teacherExamApi.getExam(this.courseId, this.examId).then(res => {
                 if (res.code === 1) {
                     this.exam = res.response
+                    this.isExamReady = true
+                    // 获取试卷题目信息
+                    this.fetchPaperInfo()
                 } else {
                     this.$message.error(res.message || '获取测验信息失败')
                 }
@@ -220,7 +301,21 @@ export default {
                 this.$message.error('网络错误，请稍后重试')
             })
         },
+        fetchPaperInfo() {
+            if (!this.isExamReady || !this.examId) return
+
+            teacherExamApi.getExamPaper(this.courseId, this.examId).then(res => {
+                if (res.code === 1) {
+                    this.paper = res.response
+                } else {
+                    console.warn('获取试卷题目信息失败:', res.message)
+                }
+            }).catch(error => {
+                console.error('获取试卷题目信息出错:', error)
+            })
+        },
         fetchStatistics() {
+            if (!this.isExamReady) return;
             if (!this.examId || this.examId === 'undefined') {
                 this.$message.error('测验ID参数错误')
                 return
@@ -318,17 +413,38 @@ export default {
             this.fetchAnswers()
         },
         fetchAnswers() {
+            if (!this.isExamReady) return;
             if (!this.examId || this.examId === 'undefined') {
                 this.$message.error('测验ID参数错误')
                 return
             }
+            
+            console.log('开始获取答卷列表，参数:', {
+                courseId: this.courseId,
+                examId: this.examId,
+                queryParam: this.queryParam
+            })
+            
             this.loading = true
             teacherExamApi.getExamAnswers(this.courseId, this.examId, this.queryParam).then(res => {
+                console.log('获取答卷列表响应:', res)
+                
                 if (res.code === 1) {
                     const data = res.response
-                    this.answers = data.list
-                    this.total = data.total
+                    this.answers = data.list || []
+                    this.total = data.total || 0
+                    
+                    console.log('答卷数据处理结果:', {
+                        answersCount: this.answers.length,
+                        total: this.total,
+                        answers: this.answers
+                    })
+                    
+                    if (this.answers.length === 0) {
+                        console.warn('答卷列表为空，可能原因：1.无学生提交答卷 2.数据查询问题 3.权限问题')
+                    }
                 } else {
+                    console.error('获取答卷列表失败:', res.message)
                     this.$message.error(res.message || '获取答卷列表失败')
                 }
                 this.loading = false
@@ -378,6 +494,9 @@ export default {
             this.$router.push({
                 path: `/teacher/course/${this.courseId}/exams`
             })
+        },
+        getQuestionStats(questionId) {
+            return this.questionStats.find(q => q.id === questionId)
         }
     }
 }
@@ -444,60 +563,192 @@ export default {
     }
 
     .question-analysis {
-        .question-stat-item {
-            margin-bottom: 30px;
-            padding: 15px;
-            border: 1px solid #EBEEF5;
-            border-radius: 4px;
+        padding: 20px;
+    }
 
-            .question-info {
-                margin-bottom: 15px;
+    .question-stat-item {
+        border: 1px solid #e4e7ed;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background-color: #fafafa;
+    }
 
-                h4 {
-                    margin-top: 0;
-                    margin-bottom: 10px;
-                }
+    .question-info h4 {
+        margin: 0 0 10px 0;
+        color: #303133;
+        font-size: 16px;
+    }
 
-                .question-meta {
-                    display: flex;
-                    gap: 15px;
+    .question-meta {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
 
-                    .question-type {
-                        background-color: #E6A23C;
-                        color: white;
-                        padding: 2px 8px;
-                        border-radius: 4px;
-                        font-size: 12px;
-                    }
+    .question-type {
+        background-color: #e1f3ff;
+        color: #409eff;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+    }
 
-                    .question-score {
-                        color: #606266;
-                    }
-                }
-            }
+    .question-score {
+        background-color: #f0f9ff;
+        color: #67c23a;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+    }
 
-            .question-stat-data {
-                .stat-row {
-                    margin-bottom: 10px;
+    .question-stat-data {
+        background-color: white;
+        padding: 15px;
+        border-radius: 6px;
+    }
 
-                    .stat-label {
-                        display: inline-block;
-                        width: 80px;
-                        color: #606266;
-                    }
+    .stat-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
 
-                    .stat-value {
-                        font-weight: bold;
-                    }
-                }
-            }
-        }
+    .stat-label {
+        font-weight: bold;
+        margin-right: 10px;
+        color: #606266;
+    }
 
-        .no-data {
-            text-align: center;
-            padding: 30px;
-            color: #909399;
-        }
+    .stat-value {
+        color: #409eff;
+        font-weight: bold;
+    }
+
+    .no-data {
+        text-align: center;
+        color: #909399;
+        padding: 50px;
+        font-size: 14px;
+    }
+
+    /* 新增：试卷题目详情样式 */
+    .title-section {
+        margin-bottom: 30px;
+    }
+
+    .section-title {
+        color: #303133;
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #409eff;
+    }
+
+    .question-item {
+        border: 1px solid #e4e7ed;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background-color: #fafafa;
+    }
+
+    .question-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+    }
+
+    .question-title {
+        margin: 0;
+        color: #303133;
+        font-size: 16px;
+        flex: 1;
+    }
+
+    .question-score {
+        color: #67c23a;
+        font-weight: normal;
+        font-size: 14px;
+        margin-left: 10px;
+    }
+
+    .question-type-tag {
+        background-color: #e1f3ff;
+        color: #409eff;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .question-options {
+        background-color: white;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 15px;
+    }
+
+    .option-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        padding: 8px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+
+    .option-item:hover {
+        background-color: #f5f7fa;
+    }
+
+    .option-prefix {
+        font-weight: bold;
+        margin-right: 8px;
+        color: #606266;
+        min-width: 20px;
+    }
+
+    .question-judge,
+    .question-fill,
+    .question-essay {
+        background-color: white;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 15px;
+    }
+
+    .correct-answer {
+        display: flex;
+        align-items: center;
+    }
+
+    .answer-analysis p {
+        margin: 0 0 10px 0;
+        color: #606266;
+    }
+
+    .answer-content {
+        background-color: #f5f7fa;
+        padding: 10px;
+        border-radius: 4px;
+        color: #303133;
+        line-height: 1.6;
+    }
+
+    .question-stats {
+        background-color: white;
+        padding: 15px;
+        border-radius: 6px;
+        border-top: 1px solid #e4e7ed;
+    }
+
+    .stats-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
     }
 }
 </style>

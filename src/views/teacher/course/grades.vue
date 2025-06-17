@@ -444,6 +444,26 @@ export default {
         '不及格': 'danger'
       }
       return colorMap[level] || 'info'
+    },
+
+    getAvgScore() {
+      if (this.gradesList.length === 0) return 0
+      const totalStudents = this.gradesList.length
+      const totalScore = this.gradesList.reduce((sum, student) => sum + ((student.totalScore || 0) / 10), 0)
+      const avgScore = (totalScore / totalStudents).toFixed(1)
+      return avgScore
+    },
+
+    getPassRate() {
+      if (this.gradesList.length === 0) return 0
+      const passCount = this.gradesList.filter(student => ((student.totalScore || 0) / 10) >= 60).length
+      return ((passCount / this.gradesList.length) * 100).toFixed(1)
+    },
+
+    getExcellentRate() {
+      if (this.gradesList.length === 0) return 0
+      const excellentCount = this.gradesList.filter(student => ((student.totalScore || 0) / 10) >= 90).length
+      return ((excellentCount / this.gradesList.length) * 100).toFixed(1)
     }
   }
 }

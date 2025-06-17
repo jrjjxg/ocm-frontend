@@ -40,11 +40,13 @@
                         <div class="sub-metrics">
                             <div class="sub-metric">
                                 <span class="label">已完成</span>
-                                <span class="value">{{ homeworkStats.completed || 0 }}/{{ homeworkStats.total || 0 }}</span>
+                                <span class="value">{{ homeworkStats.completed || 0 }}/{{ homeworkStats.total || 0
+                                    }}</span>
                             </div>
                             <div class="sub-metric">
                                 <span class="label">完成率</span>
-                                <span class="value">{{ getCompletionRate(homeworkStats.completed, homeworkStats.total) }}%</span>
+                                <span class="value">{{ getCompletionRate(homeworkStats.completed, homeworkStats.total)
+                                    }}%</span>
                             </div>
                         </div>
                     </div>
@@ -70,7 +72,8 @@
                             </div>
                             <div class="sub-metric">
                                 <span class="label">参与率</span>
-                                <span class="value">{{ getCompletionRate(examStats.completed, examStats.total) }}%</span>
+                                <span class="value">{{ getCompletionRate(examStats.completed, examStats.total)
+                                    }}%</span>
                             </div>
                         </div>
                     </div>
@@ -125,7 +128,7 @@
                                 <el-option label="已过期" value="expired"></el-option>
                             </el-select>
                         </div>
-                        
+
                         <div class="grades-list">
                             <div v-for="item in homeworkGrades" :key="item.id" class="grade-item">
                                 <div class="item-header">
@@ -150,11 +153,13 @@
                                             <span class="score-number">{{ item.score }}</span>
                                             <span class="score-total">/ {{ item.totalScore }}</span>
                                         </div>
-                                        <div class="score-percentage">{{ Math.round(item.score / item.totalScore * 100) }}%</div>
+                                        <div class="score-percentage">{{ Math.round(item.score / item.totalScore * 100)
+                                            }}%</div>
                                     </div>
                                 </div>
                                 <div class="item-actions" v-if="item.status === 'completed'">
-                                    <el-button size="mini" type="primary" @click="viewHomeworkDetail(item)">查看详情</el-button>
+                                    <el-button size="mini" type="primary"
+                                        @click="viewHomeworkDetail(item)">查看详情</el-button>
                                 </div>
                             </div>
                         </div>
@@ -170,7 +175,7 @@
                                 <el-option label="已过期" value="expired"></el-option>
                             </el-select>
                         </div>
-                        
+
                         <div class="grades-list">
                             <div v-for="item in examGrades" :key="item.id" class="grade-item">
                                 <div class="item-header">
@@ -199,7 +204,8 @@
                                             <span class="score-number">{{ item.score }}</span>
                                             <span class="score-total">/ {{ item.totalScore }}</span>
                                         </div>
-                                        <div class="score-percentage">{{ Math.round(item.score / item.totalScore * 100) }}%</div>
+                                        <div class="score-percentage">{{ Math.round(item.score / item.totalScore * 100)
+                                            }}%</div>
                                     </div>
                                 </div>
                                 <div class="item-actions" v-if="item.status === 'completed'">

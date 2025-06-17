@@ -24,8 +24,22 @@ export function startHomework(courseId, homeworkId) {
 /**
  * 提交作业答案 (RESTful风格)
  */
-export function submitHomeworkAnswer(courseId, homeworkId, data) {
-  return post(`/api/student/courses/${courseId}/homework/${homeworkId}/submit`, data)
+export function submitHomeworkAnswer(data) {
+  // 新的提交方式，直接使用payload
+  if (data && data.homeworkId) {
+    return post(`/api/student/task/submit`, data)
+  }
+  // 兼容旧的调用方式
+  const [courseId, homeworkId, payload] = arguments
+  return post(`/api/student/courses/${courseId}/homework/${homeworkId}/submit`, payload)
+}
+
+/**
+ * 提交作业答案 - 新版本
+ * @param {object} data - 包含作业ID和答案的payload
+ */
+export function submitTaskAnswer(data) {
+  return post(`/api/student/task/submit`, data)
 }
 
 /**
@@ -64,6 +78,7 @@ export default {
   homeworkDetail,
   startHomework,
   submitHomeworkAnswer,
+  submitTaskAnswer,
   saveHomeworkDraft,
   getHomeworkResult,
   getStudentAnswers,

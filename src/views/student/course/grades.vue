@@ -93,7 +93,7 @@
                         <el-table :data="homeworkGrades" border stripe>
                             <el-table-column prop="title" label="作业名称" min-width="200" show-overflow-tooltip />
                             <el-table-column prop="totalScore" label="总分" width="80" align="center">
-                                <template slot-scope="scope">{{ scope.row.totalScore / 10 }}</template>
+                                <template slot-scope="scope">{{ scope.row.totalScore }}</template>
                             </el-table-column>
                             <el-table-column prop="score" label="得分" width="80" align="center">
                                 <template slot-scope="scope">
@@ -104,8 +104,8 @@
                             <el-table-column label="得分率" width="100" align="center">
                                 <template slot-scope="scope">
                                     <span v-if="scope.row.score !== null"
-                                        :class="getScoreClass(scope.row.score / scope.row.totalScore * 100)">
-                                        {{ Math.round(scope.row.score / scope.row.totalScore * 100) }}%
+                                        :class="getScoreClass((scope.row.score / 10) / (scope.row.totalScore / 10) * 100)">
+                                        {{ Math.round((scope.row.score / 10) / (scope.row.totalScore / 10) * 100) }}%
                                     </span>
                                     <span v-else>-</span>
                                 </template>
@@ -149,7 +149,7 @@
                         <el-table :data="examGrades" border stripe>
                             <el-table-column prop="title" label="测验名称" min-width="200" show-overflow-tooltip />
                             <el-table-column prop="totalScore" label="总分" width="80" align="center">
-                                <template slot-scope="scope">{{ scope.row.totalScore / 10 }}</template>
+                                <template slot-scope="scope">{{ scope.row.totalScore }}</template>
                             </el-table-column>
                             <el-table-column prop="score" label="得分" width="80" align="center">
                                 <template slot-scope="scope">
@@ -160,8 +160,8 @@
                             <el-table-column label="得分率" width="100" align="center">
                                 <template slot-scope="scope">
                                     <span v-if="scope.row.score !== null"
-                                        :class="getScoreClass(scope.row.score / scope.row.totalScore * 100)">
-                                        {{ Math.round(scope.row.score / scope.row.totalScore * 100) }}%
+                                        :class="getScoreClass((scope.row.score / 10) / (scope.row.totalScore / 10) * 100)">
+                                        {{ Math.round((scope.row.score / 10) / (scope.row.totalScore / 10) * 100) }}%
                                     </span>
                                     <span v-else>-</span>
                                 </template>

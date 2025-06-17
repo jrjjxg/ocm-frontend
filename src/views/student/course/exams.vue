@@ -94,16 +94,16 @@
             <!-- 现代化测验卡片 -->
             <div v-else class="exams-grid-modern">
                 <div v-for="exam in exams" :key="exam.id" class="exam-card-modern"
-                    :class="getExamStatusClass(exam.status)">
+                    :class="getExamStatusClass(exam.statusName)">
                     <!-- 卡片头部 -->
-                    <div class="card-header">
+                    <div class="card-header" @click="viewExamDetail(exam)" style="cursor: pointer;">
                         <div class="header-left">
                             <h3 class="exam-title-modern">{{ exam.title }}</h3>
                             <p class="exam-description-modern" v-if="exam.description">{{ exam.description }}</p>
                         </div>
                         <div class="header-right">
-                            <el-tag :type="getStatusTagType(exam.status)" class="status-tag" effect="dark">
-                                {{ getStatusText(exam.status) }}
+                            <el-tag :type="getStatusTagType(exam.statusName)" class="status-tag" effect="dark">
+                                {{ getStatusText(exam.statusName) }}
                             </el-tag>
                         </div>
                     </div>
@@ -155,7 +155,7 @@
                         </div>
 
                         <!-- 成绩信息 -->
-                        <div v-if="exam.status === 'completed' && exam.score !== null" class="score-section">
+                        <div v-if="exam.statusName === 'completed' && exam.score !== null" class="score-section">
                             <div class="score-card">
                                 <div class="score-icon">
                                     <i class="el-icon-trophy"></i>
@@ -172,7 +172,7 @@
                         </div>
 
                         <!-- 倒计时 -->
-                        <div v-if="exam.status === 'ongoing'" class="countdown-section">
+                        <div v-if="exam.statusName === 'ongoing'" class="countdown-section">
                             <div class="countdown-card">
                                 <div class="countdown-icon">
                                     <i class="el-icon-timer"></i>
@@ -187,24 +187,31 @@
 
                     <!-- 卡片底部操作 -->
                     <div class="card-footer">
-                        <el-button v-if="exam.status === 'not_started'" type="info" disabled class="action-btn">
-                            <i class="el-icon-time"></i>
-                            未开始
-                        </el-button>
-                        <el-button v-else-if="exam.status === 'ongoing'" type="primary" @click="startExam(exam)"
-                            class="action-btn primary">
-                            <i class="el-icon-video-play"></i>
-                            开始考试
-                        </el-button>
-                        <el-button v-else-if="exam.status === 'completed'" type="success" @click="viewResult(exam)"
-                            class="action-btn success">
-                            <i class="el-icon-view"></i>
-                            查看成绩
-                        </el-button>
-                        <el-button v-else-if="exam.status === 'expired'" type="info" disabled class="action-btn">
-                            <i class="el-icon-close"></i>
-                            已过期
-                        </el-button>
+                        <div class="action-buttons">
+                            <el-button @click="viewExamDetail(exam)" type="text" class="detail-btn">
+                                <i class="el-icon-info"></i>
+                                查看详情
+                            </el-button>
+                            
+                            <el-button v-if="exam.statusName === 'not_started'" type="info" disabled class="action-btn">
+                                <i class="el-icon-time"></i>
+                                未开始
+                            </el-button>
+                            <el-button v-else-if="exam.statusName === 'ongoing'" type="primary" @click="startExam(exam)"
+                                class="action-btn primary">
+                                <i class="el-icon-video-play"></i>
+                                开始考试
+                            </el-button>
+                            <el-button v-else-if="exam.statusName === 'completed'" type="success" @click="viewResult(exam)"
+                                class="action-btn success">
+                                <i class="el-icon-view"></i>
+                                查看成绩
+                            </el-button>
+                            <el-button v-else-if="exam.statusName === 'expired'" type="info" disabled class="action-btn">
+                                <i class="el-icon-close"></i>
+                                已过期
+                            </el-button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -345,6 +352,20 @@ export default {
         },
 
         startExam(exam) {
+            // 检查考试状态
+            if (exam.statusName === 'completed') {
+                this.$message.warning('您已经完成这次考试，请查看成绩')
+                return
+            }
+            if (exam.statusName === 'not_started') {
+                this.$message.warning('考试还未开始')
+                return
+            }
+            if (exam.statusName === 'expired') {
+                this.$message.warning('考试已过期')
+                return
+            }
+
             this.examNoticeDialog.exam = exam
             this.examNoticeDialog.visible = true
         },
@@ -368,6 +389,14 @@ export default {
             // 跳转到成绩查看页面
             this.$router.push({
                 path: `/student/exam/${exam.id}/result`,
+                query: { courseId: this.courseId }
+            })
+        },
+
+        viewExamDetail(exam) {
+            // 跳转到考试详情页面
+            this.$router.push({
+                path: `/student/exam/${exam.id}/detail`,
                 query: { courseId: this.courseId }
             })
         },
@@ -866,28 +895,53 @@ export default {
     .card-footer {
         padding: 16px 24px 24px 24px;
 
-        .action-btn {
-            width: 100%;
-            height: 44px;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 14px;
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
 
-            &.primary {
-                background: linear-gradient(135deg, #667eea, #764ba2);
-                border: none;
+            .detail-btn {
+                color: #667eea;
+                font-weight: 600;
+                padding: 8px 16px;
+                border-radius: 8px;
+                transition: all 0.3s ease;
+                background: rgba(102, 126, 234, 0.1);
+                border: 1px solid rgba(102, 126, 234, 0.2);
 
                 &:hover {
-                    background: linear-gradient(135deg, #5a6fd8, #6a4190);
+                    background: rgba(102, 126, 234, 0.2);
+                    color: #5a67d8;
+                }
+
+                i {
+                    margin-right: 6px;
                 }
             }
 
-            &.success {
-                background: linear-gradient(135deg, #27ae60, #2ecc71);
-                border: none;
+            .action-btn {
+                width: 100%;
+                height: 44px;
+                border-radius: 12px;
+                font-weight: 600;
+                font-size: 14px;
 
-                &:hover {
-                    background: linear-gradient(135deg, #229954, #28b463);
+                &.primary {
+                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    border: none;
+
+                    &:hover {
+                        background: linear-gradient(135deg, #5a6fd8, #6a4190);
+                    }
+                }
+
+                &.success {
+                    background: linear-gradient(135deg, #27ae60, #2ecc71);
+                    border: none;
+
+                    &:hover {
+                        background: linear-gradient(135deg, #229954, #28b463);
+                    }
                 }
             }
         }

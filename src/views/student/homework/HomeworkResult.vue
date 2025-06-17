@@ -75,32 +75,73 @@
           </div>
         </div>
 
-        <!-- 学生提交的答案 -->
-        <div class="student-answer">
-          <h4>我的答案：</h4>
-          <div class="answer-content">
-            <div v-if="result.textAnswer" class="text-answer">
-              <h5>文字答案：</h5>
-              <div class="answer-text" v-html="result.textAnswer"></div>
+        <!-- 详细答题情况 -->
+        <div class="detailed-answers">
+          <h4>答题详情：</h4>
+          <div v-for="(answerDetail, index) in answerDetails" :key="answerDetail.questionId" class="answer-item">
+            <div class="question-header">
+              <span class="question-number">第{{ index + 1 }}题</span>
+              <el-tag :type="getQuestionTypeTag(answerDetail.questionType)" size="mini">
+                {{ getQuestionTypeText(answerDetail.questionType) }}
+              </el-tag>
+              <span class="question-score">{{ answerDetail.score || 0 }}/{{ answerDetail.questionScore }}分</span>
             </div>
 
-            <!-- 提交的文件 -->
-            <div v-if="result.files && result.files.length > 0" class="submitted-files">
-              <h5>提交文件：</h5>
-              <div class="files-list">
-                <div v-for="file in result.files" :key="file.id" class="file-item">
-                  <i class="el-icon-document"></i>
-                  <span class="file-name">{{ file.name }}</span>
-                  <el-button type="text" @click="downloadFile(file)">下载</el-button>
+            <!-- 题目内容 -->
+            <div class="question-content">
+              <div v-if="answerDetail.questionContent" v-html="getQuestionTitle(answerDetail.questionContent)"></div>
+
+              <!-- 显示选择题选项 -->
+              <div v-if="getQuestionOptions(answerDetail.questionContent).length > 0" class="question-options">
+                <div v-for="(option, optIndex) in getQuestionOptions(answerDetail.questionContent)" :key="optIndex"
+                  class="option-item">
+                  <span class="option-prefix">{{ option.prefix }}.</span>
+                  <span class="option-content" v-html="option.content"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 学生答案 -->
+            <div class="student-answer-detail">
+              <h5>我的答案：</h5>
+              <div class="answer-content" :class="getAnswerClass(answerDetail)">
+                <span v-if="answerDetail.answer">{{ answerDetail.answer }}</span>
+                <span v-else class="no-answer">未答题</span>
+
+                <!-- 客观题结果显示 -->
+                <el-tag v-if="[1, 2, 3].includes(answerDetail.questionType) && answerDetail.isCorrect !== null"
+                  :type="answerDetail.isCorrect ? 'success' : 'danger'" size="mini" class="answer-result">
+                  {{ answerDetail.isCorrect ? '正确' : '错误' }}
+                </el-tag>
+              </div>
+            </div>
+
+            <!-- 教师批改信息（仅主观题或已批改的题目） -->
+            <div
+              v-if="answerDetail.status >= 3 && ([4, 5].includes(answerDetail.questionType) || answerDetail.feedback)"
+              class="teacher-grade">
+              <h5>教师批改：</h5>
+              <div class="grade-info">
+                <div class="grade-score">
+                  <span class="label">得分：</span>
+                  <span class="score">{{ answerDetail.score || 0 }}/{{ answerDetail.questionScore }}分</span>
+                </div>
+                <div v-if="answerDetail.feedback" class="grade-feedback">
+                  <span class="label">评语：</span>
+                  <span class="feedback">{{ answerDetail.feedback }}</span>
+                </div>
+                <div v-if="answerDetail.gradeTime" class="grade-time">
+                  <span class="label">批改时间：</span>
+                  <span class="time">{{ answerDetail.gradeTime | parseTime('{y}-{m}-{d} {h}:{i}:{s}') }}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 教师评语 -->
-        <div v-if="result.feedback" class="teacher-feedback">
-          <h4>教师评语：</h4>
+        <!-- 整体教师评语 -->
+        <div v-if="result.feedback" class="overall-feedback">
+          <h4>整体评语：</h4>
           <div class="feedback-content">
             <div class="feedback-text">{{ result.feedback }}</div>
             <div class="feedback-meta">
@@ -120,7 +161,7 @@
 </template>
 
 <script>
-import { homeworkDetail, getHomeworkResult } from '@/api/student/homework'
+import { homeworkDetail, getHomeworkResult, getStudentAnswers } from '@/api/student/homework'
 
 export default {
   name: 'HomeworkResult',
@@ -128,6 +169,7 @@ export default {
     return {
       homework: {},
       result: {},
+      answerDetails: [],
       loading: false
     }
   },
@@ -152,10 +194,11 @@ export default {
           return
         }
 
-        // 获取作业详情和提交结果
-        const [homeworkRes, resultRes] = await Promise.all([
+        // 获取作业详情、提交结果和答题详情
+        const [homeworkRes, resultRes, answersRes] = await Promise.all([
           homeworkDetail(courseId, homeworkId),
-          getHomeworkResult(courseId, homeworkId)
+          getHomeworkResult(courseId, homeworkId),
+          getStudentAnswers(courseId, homeworkId)
         ])
 
         if (homeworkRes.code === 1) {
@@ -164,6 +207,10 @@ export default {
 
         if (resultRes.code === 1) {
           this.result = resultRes.response
+        }
+
+        if (answersRes.code === 1) {
+          this.answerDetails = answersRes.response || []
         }
       } catch (error) {
         this.$message.error('加载作业结果失败')
@@ -218,6 +265,53 @@ export default {
         path: `/student/homework/${this.homework.id}/submit`,
         query: { courseId: this.$route.query.courseId, resubmit: true }
       })
+    },
+
+    getQuestionTypeText(type) {
+      const typeMap = {
+        1: '单选题',
+        2: '多选题',
+        3: '判断题',
+        4: '填空题',
+        5: '问答题'
+      }
+      return typeMap[type] || '未知类型'
+    },
+
+    getQuestionTypeTag(type) {
+      const tagMap = {
+        1: 'primary',
+        2: 'success',
+        3: 'warning',
+        4: 'info',
+        5: 'danger'
+      }
+      return tagMap[type] || 'info'
+    },
+
+    getQuestionTitle(questionContent) {
+      try {
+        const content = typeof questionContent === 'string' ? JSON.parse(questionContent) : questionContent
+        return content.titleContent || '题目内容获取失败'
+      } catch (e) {
+        return questionContent || '题目内容获取失败'
+      }
+    },
+
+    getQuestionOptions(questionContent) {
+      try {
+        const content = typeof questionContent === 'string' ? JSON.parse(questionContent) : questionContent
+        return content.questionItemObjects || []
+      } catch (e) {
+        return []
+      }
+    },
+
+    getAnswerClass(answerDetail) {
+      if ([1, 2, 3].includes(answerDetail.questionType) && answerDetail.isCorrect !== null) {
+        return answerDetail.isCorrect ? 'correct-answer' : 'wrong-answer'
+      }
+      return ''
     }
   }
 }

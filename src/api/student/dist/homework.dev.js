@@ -7,6 +7,7 @@ exports.studentHomeworkList = studentHomeworkList;
 exports.homeworkDetail = homeworkDetail;
 exports.startHomework = startHomework;
 exports.submitHomeworkAnswer = submitHomeworkAnswer;
+exports.submitTaskAnswer = submitTaskAnswer;
 exports.saveHomeworkDraft = saveHomeworkDraft;
 exports.getHomeworkResult = getHomeworkResult;
 exports.getStudentAnswers = getStudentAnswers;
@@ -39,8 +40,28 @@ function startHomework(courseId, homeworkId) {
  */
 
 
-function submitHomeworkAnswer(courseId, homeworkId, data) {
-  return (0, _request.post)("/api/student/courses/".concat(courseId, "/homework/").concat(homeworkId, "/submit"), data);
+function submitHomeworkAnswer(data) {
+  // 新的提交方式，直接使用payload
+  if (data && data.homeworkId) {
+    return (0, _request.post)("/api/student/task/submit", data);
+  } // 兼容旧的调用方式
+
+
+  var _arguments = Array.prototype.slice.call(arguments),
+      courseId = _arguments[0],
+      homeworkId = _arguments[1],
+      payload = _arguments[2];
+
+  return (0, _request.post)("/api/student/courses/".concat(courseId, "/homework/").concat(homeworkId, "/submit"), payload);
+}
+/**
+ * 提交作业答案 - 新版本
+ * @param {object} data - 包含作业ID和答案的payload
+ */
+
+
+function submitTaskAnswer(data) {
+  return (0, _request.post)("/api/student/task/submit", data);
 }
 /**
  * 保存作业草稿 (RESTful风格)
@@ -83,6 +104,7 @@ var _default = {
   homeworkDetail: homeworkDetail,
   startHomework: startHomework,
   submitHomeworkAnswer: submitHomeworkAnswer,
+  submitTaskAnswer: submitTaskAnswer,
   saveHomeworkDraft: saveHomeworkDraft,
   getHomeworkResult: getHomeworkResult,
   getStudentAnswers: getStudentAnswers,

@@ -14,6 +14,7 @@
                             <i class="el-icon-time"></i>
                             时长：{{ form.suggestTime }}分钟
                         </span>
+
                     </div>
                 </div>
                 <div class="exam-timer">
@@ -44,34 +45,30 @@
                                 共{{ titleItem.questionItems.length }}题
                             </div>
                         </div>
-                        
+
                         <div class="questions-list">
-                            <div 
-                                v-for="(questionItem, questionIndex) in titleItem.questionItems" 
-                                :key="questionItem.id"
-                                :id="'question-' + questionItem.itemOrder"
-                                class="question-card"
-                                :class="{ 'answered': isQuestionAnswered(questionItem.itemOrder) }"
-                            >
+                            <div v-for="(questionItem, questionIndex) in titleItem.questionItems" :key="questionItem.id"
+                                :id="'question-' + questionItem.itemOrder" class="question-card"
+                                :class="{ 'answered': isQuestionAnswered(questionItem.itemOrder) }">
                                 <div class="question-header">
                                     <div class="question-number">
                                         <span class="number">{{ questionItem.itemOrder }}</span>
-                                        <div class="status-indicator" :class="{ 'completed': isQuestionAnswered(questionItem.itemOrder) }">
-                                            <i class="el-icon-check" v-if="isQuestionAnswered(questionItem.itemOrder)"></i>
+                                        <div class="status-indicator"
+                                            :class="{ 'completed': isQuestionAnswered(questionItem.itemOrder) }">
+                                            <i class="el-icon-check"
+                                                v-if="isQuestionAnswered(questionItem.itemOrder)"></i>
                                         </div>
                                     </div>
                                     <div class="question-info">
-                                        <span class="question-type">{{ getQuestionTypeName(questionItem.questionType) }}</span>
+                                        <span class="question-type">{{ getQuestionTypeName(questionItem.questionType)
+                                            }}</span>
                                         <span class="question-score">{{ questionItem.score }}分</span>
                                     </div>
                                 </div>
-                                
+
                                 <div class="question-content">
-                                    <QuestionEdit 
-                                        :qType="questionItem.questionType" 
-                                        :question="questionItem"
-                                        :answer="answer.answerItems[questionItem.itemOrder - 1]" 
-                                    />
+                                    <QuestionEdit :qType="questionItem.questionType" :question="questionItem"
+                                        :answer="answer.answerItems[questionItem.itemOrder - 1]" />
                                 </div>
                             </div>
                         </div>
@@ -81,9 +78,10 @@
                 <!-- 底部操作区域 -->
                 <div class="exam-actions">
                     <el-button size="large" @click="goBack">取消考试</el-button>
-                    <el-button type="primary" size="large" @click="submitForm" :loading="formLoading">
+                    <el-button type="primary" size="large" @click="submitForm" :loading="formLoading"
+                        :disabled="submitButtonDisabled">
                         <i class="el-icon-check"></i>
-                        提交答卷
+                        {{ submitButtonText }}
                     </el-button>
                 </div>
             </div>
@@ -97,16 +95,13 @@
                             {{ answeredCount }}/{{ totalQuestions }}
                         </div>
                     </div>
-                    
+
                     <div class="progress-bar">
-                        <el-progress 
-                            :percentage="progressPercentage" 
-                            :stroke-width="8"
-                            :show-text="false"
-                        ></el-progress>
+                        <el-progress :percentage="progressPercentage" :stroke-width="8"
+                            :show-text="false"></el-progress>
                         <span class="progress-text">{{ progressPercentage }}%</span>
                     </div>
-                    
+
                     <div class="questions-nav">
                         <div class="nav-legend">
                             <div class="legend-item">
@@ -118,18 +113,12 @@
                                 <span>未答</span>
                             </div>
                         </div>
-                        
+
                         <div class="questions-grid">
-                            <div 
-                                v-for="item in answer.answerItems" 
-                                :key="item.itemOrder"
-                                class="nav-question"
-                                :class="{ 
-                                    'answered': item.completed,
-                                    'current': currentQuestion === item.itemOrder 
-                                }"
-                                @click="goToQuestion(item.itemOrder)"
-                            >
+                            <div v-for="item in answer.answerItems" :key="item.itemOrder" class="nav-question" :class="{
+                                'answered': item.completed,
+                                'current': currentQuestion === item.itemOrder
+                            }" @click="goToQuestion(item.itemOrder)">
                                 {{ item.itemOrder }}
                             </div>
                         </div>
@@ -139,12 +128,7 @@
         </div>
 
         <!-- 提交确认对话框 -->
-        <el-dialog
-            title="提交确认"
-            :visible.sync="submitDialogVisible"
-            width="500px"
-            :close-on-click-modal="false"
-        >
+        <el-dialog title="提交确认" :visible.sync="submitDialogVisible" width="500px" :close-on-click-modal="false">
             <div class="submit-confirm">
                 <div class="confirm-icon">
                     <i class="el-icon-warning"></i>
@@ -169,7 +153,8 @@
 import { mapState, mapGetters } from 'vuex'
 import { formatSeconds } from '@/utils'
 import QuestionEdit from '../components/QuestionEdit'
-import { startExam, submitExamAnswer, saveExamDraft } from '@/api/student/exam'
+import { getExamDetail, startExam, submitExamAnswer, saveExamDraft } from '@/api/student/exam'
+import * as examApi from '@/api/student/exam'
 import examPaperApi from '@/api/examPaper'
 
 export default {
@@ -210,6 +195,12 @@ export default {
             if (this.totalQuestions === 0) return 0
             return Math.round((this.answeredCount / this.totalQuestions) * 100)
         },
+        submitButtonDisabled() {
+            return false;
+        },
+        submitButtonText() {
+            return '提交答卷';
+        },
         ...mapGetters('enumItem', ['enumFormat']),
         ...mapState('enumItem', {
             doCompletedTag: state => state.exam.question.answer.doCompletedTag
@@ -225,7 +216,7 @@ export default {
         async initExam() {
             const examId = this.$route.params.examId
             const courseId = this.$route.query.courseId
-            
+
             if (!examId || !courseId) {
                 this.$message.error('参数错误')
                 this.goBack()
@@ -234,18 +225,35 @@ export default {
 
             try {
                 this.formLoading = true
-                
+
                 // 开始考试，获取试卷信息
-                const response = await startExam(courseId, examId)
+                const response = await getExamDetail(courseId, examId)
                 if (response.code === 1) {
-                    this.form = response.response.paper
-                    this.remainTime = response.response.remainTime
-                    this.initAnswer(examId, courseId)
+                    this.form = response.response
+                    // 初始化答案数据
+                    this.answer.courseId = courseId
+                    this.answer.examId = examId
+                    this.remainTime = this.form.suggestTime * 60
+
+                    if (!this.answer.answerItems || this.answer.answerItems.length === 0) {
+                        this.initAnswerItems()
+                    }
+
                     this.startTimer()
                     this.startAutoSave()
                 } else {
-                    this.$message.error(response.message || '开始考试失败')
-                    this.goBack()
+                    // 如果是已提交错误，显示特殊提示
+                    if (response.code === 403 && response.message && response.message.includes('已经提交')) {
+                        this.$alert(response.message, '考试已完成', {
+                            confirmButtonText: '返回课程页面',
+                            callback: () => {
+                                this.goBack()
+                            }
+                        })
+                    } else {
+                        this.$message.error(response.message || '开始考试失败')
+                        this.goBack()
+                    }
                 }
             } catch (error) {
                 this.$message.error('开始考试失败')
@@ -255,10 +263,7 @@ export default {
             }
         },
 
-        initAnswer(examId, courseId) {
-            this.answer.examId = examId
-            this.answer.courseId = courseId
-            
+        initAnswerItems() {
             let questionOrder = 1
             this.form.titleItems.forEach(titleItem => {
                 titleItem.questionItems.forEach(question => {
@@ -343,26 +348,48 @@ export default {
         },
 
         async confirmSubmit() {
+            this.submitting = true
             try {
-                this.submitting = true
                 this.clearTimers()
-                
-                const response = await submitExamAnswer(this.answer.courseId, this.answer.examId, this.answer)
-                if (response.code === 1) {
-                    this.$alert(`考试完成！得分：${response.response}分`, '考试结果', {
-                        confirmButtonText: '查看详情',
-                        callback: () => {
-                            this.$router.push({
-                                path: `/student/exam/${this.answer.examId}/result`,
-                                query: { courseId: this.answer.courseId }
-                            })
+
+                // 如果不是课程考试，先检查提交次数限制
+                if (!this.answer.courseId && this.answer.id) {
+                    const statusResponse = await examApi.getExamStatus(this.answer.id)
+                    if (statusResponse.code === 1) {
+                        const { maxAttempts, submittedCount, canSubmit } = statusResponse.response
+
+                        if (!canSubmit) {
+                            this.$alert(
+                                `您已达到最大提交次数限制（${submittedCount}/${maxAttempts}）`,
+                                '无法提交',
+                                {
+                                    confirmButtonText: '确定',
+                                    callback: () => {
+                                        this.goBack()
+                                    }
+                                }
+                            )
+                            return
+                        }
+                    }
+                }
+
+                const res = await submitExamAnswer(this.answer.courseId, this.answer.examId, this.answer)
+                if (res.code === 1) {
+                    this.$alert(`试卷得分：${res.response}分`, '提交成功', {
+                        confirmButtonText: '返回课程主页',
+                        callback: action => {
+                            this.goBack()
                         }
                     })
                 } else {
-                    this.$message.error(response.message || '提交失败')
+                    this.$message.error(res.message || '提交失败')
+                    this.startTimer() // 重新开始计时器
                 }
             } catch (error) {
-                this.$message.error('提交失败，请重试')
+                console.error('提交试卷出错:', error)
+                this.$message.error('提交失败，请检查网络')
+                this.startTimer() // 重新开始计时器
             } finally {
                 this.submitting = false
                 this.submitDialogVisible = false
@@ -490,8 +517,15 @@ export default {
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
 }
 
 // 主要内容区域

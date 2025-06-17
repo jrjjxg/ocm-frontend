@@ -141,36 +141,80 @@
                     <div v-for="(answer, index) in currentAnswers" :key="answer.id" class="question-grade">
                         <div class="question-header">
                             <span class="question-number">第{{ index + 1 }}题</span>
+                            <el-tag :type="getQuestionTypeTag(answer.questionType)" size="mini">
+                                {{ getQuestionTypeText(answer.questionType) }}
+                            </el-tag>
                             <span class="question-score">{{ answer.questionScore }}分</span>
                         </div>
-                        <div class="question-content">
-                            <div v-if="answer.questionTitle" v-html="answer.questionTitle"></div>
-                            <div v-else class="no-content">题目内容加载中...</div>
-                        </div>
 
-                        <div class="student-answer">
-                            <h4>学生答案:</h4>
-                            <div class="answer-content">
-                                <span v-if="answer.studentAnswer">{{ answer.studentAnswer }}</span>
-                                <span v-else class="no-answer">学生未答题</span>
+                        <!-- 题目内容 -->
+                        <div class="question-content">
+                            <div class="question-title" v-if="answer.questionTitle" v-html="answer.questionTitle"></div>
+                            <div v-else class="no-content">题目内容加载中...</div>
+
+                            <!-- 选择题选项 -->
+                            <div v-if="answer.questionContent && answer.questionContent.questionItemObjects && answer.questionContent.questionItemObjects.length > 0"
+                                class="question-options">
+                                <div v-for="(option, optIndex) in answer.questionContent.questionItemObjects"
+                                    :key="optIndex" class="option-item">
+                                    <span class="option-prefix">{{ option.prefix }}.</span>
+                                    <span class="option-content" v-html="option.content"></span>
+                                    <!-- 显示正确答案标识 -->
+                                    <el-tag v-if="isCorrectOption(answer.questionContent.correct, option.prefix)"
+                                        type="success" size="mini" class="correct-tag">正确答案</el-tag>
+                                </div>
+                            </div>
+
+                            <!-- 正确答案（对于没有选项的题目） -->
+                            <div v-if="answer.questionContent && answer.questionContent.correct && !answer.questionContent.questionItemObjects?.length"
+                                class="correct-answer">
+                                <strong>参考答案：</strong>
+                                <span v-html="answer.questionContent.correct"></span>
                             </div>
                         </div>
 
-                        <div class="grade-section">
-                            <el-row :gutter="20">
-                                <el-col :span="8">
-                                    <el-form-item label="得分:">
-                                        <el-input-number v-model="answer.score" :min="0" :max="answer.questionScore"
-                                            size="small" />
-                                    </el-form-item>
-                                </el-col>
-                                <el-col :span="16">
-                                    <el-form-item label="评语:">
-                                        <el-input v-model="answer.feedback" type="textarea" :rows="2"
-                                            placeholder="请输入评语" size="small" />
-                                    </el-form-item>
-                                </el-col>
-                            </el-row>
+                        <!-- 学生答案 -->
+                        <div class="student-answer">
+                            <h4>学生答案:</h4>
+                            <div class="answer-content" :class="getAnswerClass(answer)">
+                                <span v-if="answer.studentAnswer">{{ answer.studentAnswer }}</span>
+                                <span v-else class="no-answer">学生未答题</span>
+                                <!-- 自动判题结果 -->
+                                <el-tag v-if="[2, 3].includes(answer.questionType)"
+                                    :type="answer.isCorrect ? 'success' : 'danger'" size="mini" class="answer-result">
+                                    {{ answer.isCorrect ? '正确' : '错误' }}
+                                </el-tag>
+                            </div>
+                        </div>
+
+                        <!-- 评分区域 - 只对填空题和问答题显示 -->
+                        <div v-if="[4, 5].includes(answer.questionType)" class="grade-section">
+                            <el-form>
+                                <el-row :gutter="20">
+                                    <el-col :span="8">
+                                        <el-form-item label="得分:">
+                                            <el-input-number v-model="answer.score" :min="0" :max="answer.questionScore"
+                                                size="small" />
+                                        </el-form-item>
+                                    </el-col>
+                                    <el-col :span="16">
+                                        <el-form-item label="评语:">
+                                            <el-input v-model="answer.feedback" type="textarea" :rows="2"
+                                                placeholder="请输入评语" size="small" />
+                                        </el-form-item>
+                                    </el-col>
+                                </el-row>
+                            </el-form>
+                        </div>
+
+                        <!-- 客观题自动评分显示 -->
+                        <div v-else class="auto-grade-section">
+                            <div class="auto-score">
+                                <span class="score-label">自动评分:</span>
+                                <span class="score-value" :class="answer.isCorrect ? 'correct-score' : 'wrong-score'">
+                                    {{ answer.isCorrect ? answer.questionScore : 0 }}/{{ answer.questionScore }}分
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -201,7 +245,11 @@ export default {
             totalSubmissions: 0,
             gradeDialogVisible: false,
             currentStudent: null,
-            currentAnswers: []
+            currentAnswers: [],
+            // 添加统计数据作为数据属性
+            totalStudents: 0,
+            submittedCount: 0,
+            gradedCount: 0
         }
     },
     computed: {
@@ -232,9 +280,6 @@ export default {
         },
         totalCount() {
             return this.submissions.filter(item => item.submitted).length
-        },
-        gradedCount() {
-            return this.submissions.filter(item => item.gradeStatus === 'graded').length
         }
     },
     created() {
@@ -306,17 +351,30 @@ export default {
 
                 // 处理API返回的数据结构
                 if (response && response.response) {
-                    this.currentAnswers = response.response.map(answer => ({
-                        id: answer.id,
-                        questionId: answer.questionId,
-                        questionTitle: answer.questionContent || '题目内容获取失败',
-                        questionScore: answer.questionScore || 10,
-                        questionType: answer.questionType,
-                        studentAnswer: answer.answer || '未答题',
-                        score: answer.score,
-                        feedback: answer.feedback || '',
-                        status: answer.status
-                    }))
+                    this.currentAnswers = response.response.map(answer => {
+                        // 解析题目内容JSON
+                        let questionContent = null
+                        try {
+                            questionContent = JSON.parse(answer.questionContent || '{}')
+                        } catch (e) {
+                            console.error('解析题目内容失败:', e)
+                            questionContent = { titleContent: '题目内容解析失败' }
+                        }
+
+                        return {
+                            id: answer.id,
+                            questionId: answer.questionId,
+                            questionTitle: questionContent.titleContent || '题目内容获取失败',
+                            questionContent: questionContent,
+                            questionScore: answer.questionScore || 10,
+                            questionType: answer.questionType,
+                            studentAnswer: answer.answer || '未答题',
+                            score: answer.score || 0,
+                            feedback: answer.feedback || '',
+                            status: answer.status,
+                            isCorrect: answer.isCorrect
+                        }
+                    })
                 } else {
                     this.currentAnswers = []
                 }
@@ -338,14 +396,23 @@ export default {
                 const homeworkId = this.$route.params.homeworkId
                 const studentId = this.currentStudent.studentId
 
+                // 过滤出需要人工评分的题目（填空题和问答题）
+                const manualGradeAnswers = this.currentAnswers.filter(answer =>
+                    [4, 5].includes(answer.questionType) && answer.id
+                )
+
+                if (manualGradeAnswers.length === 0) {
+                    this.$message.warning('没有需要批改的题目')
+                    return
+                }
+
                 // 使用新的RESTful API进行批改
                 const gradeData = {
-                    answers: this.currentAnswers.filter(answer => answer.id && answer.score !== null)
-                        .map(answer => ({
-                            id: answer.id,
-                            score: answer.score,
-                            feedback: answer.feedback
-                        }))
+                    answers: manualGradeAnswers.map(answer => ({
+                        id: answer.id,
+                        score: answer.score || 0,
+                        feedback: answer.feedback || ''
+                    }))
                 }
 
                 console.log('提交评分数据:', gradeData)
@@ -367,8 +434,10 @@ export default {
         },
 
         handleViewAnswers(student) {
-            // 查看学生答题详情，可以跳转到详情页面
-            this.$router.push(`/teacher/course/${this.$route.params.id}/homework/grade/${this.$route.params.homeworkId}/student/${student.studentId}/view`)
+            // 查看学生答题详情，跳转到答题查看页面
+            const courseId = this.$route.params.id
+            const homeworkId = this.$route.params.homeworkId
+            this.$router.push(`/teacher/course/${courseId}/homework/${homeworkId}/students/${student.studentId}/answers`)
         },
 
         handleBatchGrade() {
@@ -426,6 +495,40 @@ export default {
                 ]
                 this.loading = false
             }, 500)
+        },
+
+        getQuestionTypeText(type) {
+            const typeMap = {
+                1: '单选题',
+                2: '多选题',
+                3: '判断题',
+                4: '填空题',
+                5: '问答题'
+            }
+            return typeMap[type] || '未知类型'
+        },
+
+        getQuestionTypeTag(type) {
+            const tagMap = {
+                1: 'primary',
+                2: 'success',
+                3: 'warning',
+                4: 'info',
+                5: 'danger'
+            }
+            return tagMap[type] || 'info'
+        },
+
+        isCorrectOption(correctAnswer, optionPrefix) {
+            if (!correctAnswer || !optionPrefix) return false
+            return correctAnswer.includes(optionPrefix)
+        },
+
+        getAnswerClass(answer) {
+            if ([2, 3].includes(answer.questionType)) {
+                return answer.isCorrect ? 'correct-answer' : 'wrong-answer'
+            }
+            return ''
         }
     }
 }
@@ -597,11 +700,104 @@ export default {
                     color: #909399;
                     font-style: italic;
                 }
+
+                .question-title {
+                    margin-bottom: 15px;
+                    font-size: 16px;
+                    line-height: 1.6;
+                }
+
+                .question-options {
+                    margin-top: 15px;
+
+                    .option-item {
+                        display: flex;
+                        align-items: center;
+                        margin-bottom: 10px;
+                        padding: 8px 12px;
+                        background: #fafafa;
+                        border-radius: 4px;
+
+                        .option-prefix {
+                            font-weight: bold;
+                            margin-right: 8px;
+                            min-width: 20px;
+                        }
+
+                        .option-content {
+                            flex: 1;
+                            margin-right: 10px;
+                        }
+
+                        .correct-tag {
+                            margin-left: auto;
+                        }
+                    }
+                }
+
+                .correct-answer {
+                    margin-top: 15px;
+                    padding: 10px;
+                    background: #f0f9ff;
+                    border-left: 3px solid #409EFF;
+                    border-radius: 4px;
+                }
+            }
+
+            .student-answer {
+                .answer-content {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+
+                    &.correct-answer {
+                        background: #f0f9ff;
+                        border-left-color: #67C23A;
+                    }
+
+                    &.wrong-answer {
+                        background: #fef0f0;
+                        border-left-color: #F56C6C;
+                    }
+
+                    .answer-result {
+                        margin-left: auto;
+                    }
+                }
             }
 
             .grade-section {
                 border-top: 1px solid #e4e7ed;
                 padding-top: 15px;
+            }
+
+            .auto-grade-section {
+                border-top: 1px solid #e4e7ed;
+                padding-top: 15px;
+
+                .auto-score {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+
+                    .score-label {
+                        color: #606266;
+                        font-size: 14px;
+                    }
+
+                    .score-value {
+                        font-weight: bold;
+                        font-size: 16px;
+
+                        &.correct-score {
+                            color: #67C23A;
+                        }
+
+                        &.wrong-score {
+                            color: #F56C6C;
+                        }
+                    }
+                }
             }
         }
     }

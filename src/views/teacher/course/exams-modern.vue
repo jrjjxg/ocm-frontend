@@ -220,9 +220,7 @@
 
                 <el-form-item label="考试规则">
                     <div class="rules-group">
-                        <el-checkbox v-model="examForm.shuffleQuestions">随机打乱题目顺序</el-checkbox>
                         <el-checkbox v-model="examForm.showResult">考试后立即显示成绩</el-checkbox>
-                        <el-checkbox v-model="examForm.limitIP">限制IP地址</el-checkbox>
                     </div>
                 </el-form-item>
             </el-form>
@@ -266,9 +264,7 @@ export default {
                 timeRange: [],
                 duration: 60,
                 paperId: '',
-                shuffleQuestions: false,
-                showResult: true,
-                limitIP: false
+                showResult: true
             },
             timeConflict: false,
             timeConflictMessage: '',
@@ -410,9 +406,7 @@ export default {
                         timeRange: [exam.startTime, exam.endTime],
                         duration: exam.duration,
                         paperId: exam.paperId,
-                        shuffleQuestions: exam.shuffleQuestions || false,
-                        showResult: exam.showResult !== undefined ? exam.showResult : true,
-                        limitIP: exam.limitIP || false
+                        showResult: exam.showResult !== undefined ? exam.showResult : true
                     }
                 } else {
                     this.$message.error(response.message || '获取测验详情失败')
@@ -466,9 +460,7 @@ export default {
                     endTime: this.examForm.timeRange[1],
                     duration: this.examForm.duration,
                     paperId: this.examForm.paperId,
-                    shuffleQuestions: this.examForm.shuffleQuestions,
                     showResult: this.examForm.showResult,
-                    limitIP: this.examForm.limitIP,
                     courseId: this.courseId
                 }
 
@@ -503,9 +495,7 @@ export default {
                 timeRange: [],
                 duration: 60,
                 paperId: '',
-                shuffleQuestions: false,
-                showResult: true,
-                limitIP: false
+                showResult: true
             }
             this.timeConflict = false
             this.timeConflictMessage = ''

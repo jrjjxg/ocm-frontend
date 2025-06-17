@@ -99,12 +99,12 @@
                                 <el-tag :type="getQuestionTypeColor(question.questionType)" size="mini">
                                     {{ getQuestionTypeName(question.questionType) }}
                                 </el-tag>
-                                <span class="question-score">{{ question.score / 10 }}分</span>
+                                <span class="question-score">{{ getDisplayScore(question.score) }}分</span>
                             </div>
                         </div>
                         <div class="question-content" v-html="question.title"></div>
-                        <div v-if="question.options && question.options.length > 0" class="question-options">
-                            <div v-for="(option, optIndex) in question.options" :key="optIndex" class="option-item">
+                        <div v-if="question.items && question.items.length > 0" class="question-options">
+                            <div v-for="(option, optIndex) in question.items" :key="optIndex" class="option-item">
                                 {{ option.prefix }}. {{ option.content }}
                             </div>
                         </div>
@@ -147,7 +147,13 @@ export default {
 
                 // 获取作业详情
                 const homeworkResponse = await homeworkDetail(courseId, homeworkId)
-                this.homework = homeworkResponse.data
+                if (homeworkResponse.code === 1) {
+                    this.homework = homeworkResponse.response
+                } else {
+                    this.$message.error(homeworkResponse.message || '作业不存在或已被删除')
+                    this.homework = null
+                    return
+                }
 
                 // 获取题目列表
                 this.loadQuestions(courseId, homeworkId)
@@ -164,7 +170,11 @@ export default {
             try {
                 this.questionsLoading = true
                 const response = await homeworkQuestions(courseId, homeworkId)
-                this.questions = response.data || []
+                if (response.code === 1) {
+                    this.questions = response.response || []
+                } else {
+                    this.questions = []
+                }
             } catch (error) {
                 this.$message.error('加载题目列表失败')
                 console.error('Load questions error:', error)
@@ -261,6 +271,14 @@ export default {
                 6: ''
             }
             return colorMap[type] || 'info'
+        },
+
+        getDisplayScore(score) {
+            if (!score) return 0
+            // 如果是字符串，尝试转换为数字
+            const numScore = typeof score === 'string' ? parseFloat(score) : score
+            // 如果分数看起来像是十分制（小于等于10），直接返回；否则除以10
+            return numScore <= 10 ? numScore : (numScore / 10)
         },
 
         formatTime(time) {

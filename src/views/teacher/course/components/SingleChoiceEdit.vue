@@ -13,21 +13,33 @@
             </el-form-item>
             <!-- 选择题、判断题的选项 -->
             <el-form-item v-if="[1, 2, 3].includes(questionType)" label="选项：">
-                <div v-for="(item, index) in form.items" :key="index" style="margin-bottom: 10px;">
-                    <el-row :gutter="20">
-                        <el-col :span="2">
-                            <el-tag>{{ item.prefix }}</el-tag>
-                        </el-col>
-                        <el-col :span="20">
-                            <el-input v-model="item.content" @click.native="inputClick(item, 'content')"></el-input>
-                        </el-col>
-                        <el-col :span="2">
+                <div class="options-container">
+                    <div class="options-tip" v-if="[1, 2].includes(questionType)">
+                        <i class="el-icon-info"></i>
+                        <span v-if="questionType === 1">单选题至少需要2个选项，最多8个选项</span>
+                        <span v-if="questionType === 2">多选题至少需要2个选项，最多8个选项</span>
+                    </div>
+                    <div v-for="(item, index) in form.items" :key="index" class="option-item">
+                        <div class="option-prefix">
+                            <el-tag type="primary" size="medium">{{ item.prefix }}</el-tag>
+                        </div>
+                        <div class="option-input">
+                            <el-input v-model="item.content" placeholder="请输入选项内容"
+                                @click.native="inputClick(item, 'content')" size="medium">
+                            </el-input>
+                        </div>
+                        <div class="option-actions">
                             <el-button v-if="form.items.length > 2 && questionType !== 3" type="danger" size="small"
-                                @click="questionItemRemove(index)">
-                                删除
+                                icon="el-icon-delete" circle @click="questionItemRemove(index)" title="删除选项">
                             </el-button>
-                        </el-col>
-                    </el-row>
+                        </div>
+                    </div>
+                    <div v-if="[1, 2].includes(questionType)" class="add-option-btn">
+                        <el-button type="dashed" size="medium" icon="el-icon-plus" @click="questionItemAdd"
+                            :disabled="form.items.length >= 8">
+                            添加选项 ({{ form.items.length }}/8)
+                        </el-button>
+                    </div>
                 </div>
             </el-form-item>
 
@@ -67,17 +79,9 @@
             <el-form-item label="分数：" prop="score">
                 <el-input v-model="form.score" placeholder="请输入分数"></el-input>
             </el-form-item>
-            <el-form-item label="难度：">
-                <el-radio-group v-model="form.difficult">
-                    <el-radio :label="1">简单</el-radio>
-                    <el-radio :label="2">中等</el-radio>
-                    <el-radio :label="3">困难</el-radio>
-                </el-radio-group>
-            </el-form-item>
             <el-form-item>
                 <el-button type="primary" @click="submitForm" :loading="formLoading">提交</el-button>
                 <el-button @click="resetForm">重置</el-button>
-                <el-button v-if="[1, 2].includes(questionType)" type="success" @click="questionItemAdd">添加选项</el-button>
                 <el-button type="success" @click="showQuestion">预览</el-button>
                 <el-button @click="goBack">返回</el-button>
             </el-form-item>
@@ -160,7 +164,6 @@ export default {
                 correct: '',
                 correctArray: [], // 多选题答案
                 score: '10', // 字符串格式
-                difficult: 1
             },
             formLoading: false,
             rules: {
@@ -428,7 +431,6 @@ export default {
                 correct: '',
                 correctArray: [],
                 score: '10',
-                difficult: 1
             }
         },
 
@@ -450,5 +452,104 @@ export default {
     max-width: 800px;
     margin: 0 auto;
     padding: 20px;
+}
+
+.options-container {
+    width: 100%;
+}
+
+.options-tip {
+    margin-bottom: 15px;
+    padding: 10px 12px;
+    background-color: #e6f7ff;
+    border: 1px solid #91d5ff;
+    border-radius: 4px;
+    color: #0050b3;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+}
+
+.options-tip i {
+    margin-right: 8px;
+    color: #1890ff;
+}
+
+.option-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 12px;
+    background-color: #fafafa;
+    border: 1px solid #e4e7ed;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.option-item:hover {
+    background-color: #f5f7fa;
+    border-color: #c0c4cc;
+}
+
+.option-prefix {
+    flex-shrink: 0;
+    margin-right: 15px;
+}
+
+.option-prefix .el-tag {
+    font-weight: bold;
+    font-size: 14px;
+    min-width: 32px;
+    text-align: center;
+}
+
+.option-input {
+    flex: 1;
+    margin-right: 15px;
+}
+
+.option-input .el-input__inner:focus {
+    border-color: #409eff;
+    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
+}
+
+.option-item.focused {
+    border-color: #409eff;
+    background-color: #ecf5ff;
+}
+
+.option-actions {
+    flex-shrink: 0;
+}
+
+.option-actions .el-button {
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+
+.option-item:hover .option-actions .el-button {
+    opacity: 1;
+}
+
+.option-actions .el-button:hover {
+    transform: scale(1.1);
+}
+
+.add-option-btn {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.add-option-btn .el-button {
+    width: 100%;
+    border-style: dashed;
+    border-width: 2px;
+    color: #409eff;
+    background-color: transparent;
+}
+
+.add-option-btn .el-button:hover {
+    background-color: #ecf5ff;
+    border-color: #66b1ff;
 }
 </style>
